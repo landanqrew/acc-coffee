@@ -20,3 +20,15 @@ export async function sendEmail({ to, subject, text }: EmailMessage): Promise<vo
     throw new Error(`Failed to send email: ${error.message}`);
   }
 }
+
+/** Emails a passwordless sign-in (magic) link to a team member. */
+export async function sendMagicLink(to: string, url: string): Promise<void> {
+  await sendEmail({
+    to,
+    subject: "Your acc-coffee sign-in link",
+    text:
+      `Tap the link below to sign in to acc-coffee:\n\n${url}\n\n` +
+      "This link signs you in and expires shortly. " +
+      "If you didn't request it, you can safely ignore this email.",
+  });
+}
