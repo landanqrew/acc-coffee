@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   pgTable,
   primaryKey,
@@ -87,4 +88,21 @@ export const invites = pgTable("invite", {
   }),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   acceptedAt: timestamp("acceptedAt", { mode: "date" }),
+});
+
+/**
+ * A Supply tracked in inventory (beans, cups, filters…). `designated` marks the
+ * ones counted on every Service Report; `minimumLevel` is the optional threshold
+ * that drives Restock Alerts. Retiring a Supply sets `retiredAt` (soft delete) so
+ * its history survives while it drops out of active views. See CONTEXT.md.
+ */
+export const supplies = pgTable("supply", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  designated: boolean("designated").notNull().default(false),
+  minimumLevel: integer("minimumLevel"),
+  retiredAt: timestamp("retiredAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
 });
