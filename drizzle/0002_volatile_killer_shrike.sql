@@ -1,0 +1,2 @@
+ALTER TABLE "supply" ADD CONSTRAINT "supply_name_length" CHECK (char_length("supply"."name") <= 100);--> statement-breakpoint
+ALTER TABLE "supply" ADD CONSTRAINT "supply_minimum_level_nonneg" CHECK ("supply"."minimumLevel" is null or "supply"."minimumLevel" >= 0);

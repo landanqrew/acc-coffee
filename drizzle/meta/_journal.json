@@ -8,6 +8,20 @@
       "when": 1780874419141,
       "tag": "0000_even_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780876098420,
+      "tag": "0001_misty_miracleman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780876632259,
+      "tag": "0002_volatile_killer_shrike",
+      "breakpoints": true
     }
   ]
 }
