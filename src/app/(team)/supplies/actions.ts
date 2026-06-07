@@ -55,6 +55,11 @@ export async function updateSupplyAction(
 
 export async function retireSupplyAction(formData: FormData): Promise<void> {
   const lead = await requireLead();
-  await retireSupply(lead.role, String(formData.get("id") ?? ""));
+  try {
+    await retireSupply(lead.role, String(formData.get("id") ?? ""));
+  } catch (err) {
+    // A stale retire (already retired / removed) is a no-op; log and move on.
+    console.error("Failed to retire supply:", err);
+  }
   revalidatePath("/supplies");
 }

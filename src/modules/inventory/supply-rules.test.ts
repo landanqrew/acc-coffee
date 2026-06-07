@@ -35,11 +35,22 @@ describe("validateSupplyInput", () => {
     expect(() => validateSupplyInput({ name: "   " })).toThrow(SupplyValidationError);
   });
 
-  it("rejects a negative or fractional minimum level", () => {
+  it("rejects a negative, fractional, or NaN minimum level", () => {
     expect(() => validateSupplyInput({ name: "Beans", minimumLevel: -1 })).toThrow(
       SupplyValidationError,
     );
     expect(() => validateSupplyInput({ name: "Beans", minimumLevel: 2.5 })).toThrow(
+      SupplyValidationError,
+    );
+    // The form parses an unparseable minimum to NaN — it must be rejected.
+    expect(() => validateSupplyInput({ name: "Beans", minimumLevel: Number("x") })).toThrow(
+      SupplyValidationError,
+    );
+  });
+
+  it("accepts a 100-character name but rejects 101", () => {
+    expect(validateSupplyInput({ name: "a".repeat(100) }).name).toHaveLength(100);
+    expect(() => validateSupplyInput({ name: "a".repeat(101) })).toThrow(
       SupplyValidationError,
     );
   });

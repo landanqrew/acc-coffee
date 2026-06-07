@@ -1,4 +1,4 @@
-import { asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { supplies } from "@/db/schema";
 import type { Role } from "@/modules/auth/roles";
@@ -32,10 +32,11 @@ export async function updateSupply(
 ): Promise<Supply> {
   assertCanManageSupplies(actorRole);
   const values = validateSupplyInput(input);
+  // Only active supplies are editable; a retired one reads as "no longer exists".
   const [row] = await db
     .update(supplies)
     .set(values)
-    .where(eq(supplies.id, id))
+    .where(and(eq(supplies.id, id), isNull(supplies.retiredAt)))
     .returning();
   if (!row) {
     throw new SupplyValidationError("That supply no longer exists.");
@@ -49,10 +50,14 @@ export async function retireSupply(
   id: string,
 ): Promise<void> {
   assertCanManageSupplies(actorRole);
-  await db
+  const [row] = await db
     .update(supplies)
     .set({ retiredAt: new Date() })
-    .where(eq(supplies.id, id));
+    .where(and(eq(supplies.id, id), isNull(supplies.retiredAt)))
+    .returning({ id: supplies.id });
+  if (!row) {
+    throw new SupplyValidationError("That supply no longer exists.");
+  }
 }
 
 /** Active (non-retired) Supplies, alphabetized. Readable by the whole team. */
