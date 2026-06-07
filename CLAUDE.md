@@ -13,3 +13,7 @@ Default canonical label names (`needs-triage`, `needs-info`, `ready-for-agent`, 
 ### Domain docs
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Rules
+
+- never include `co-authored-by` or `Generated with...` lines in git commits, PR comments or PR descriptions.

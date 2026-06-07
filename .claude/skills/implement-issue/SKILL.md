@@ -5,7 +5,7 @@ description: End-to-end implementation of a single tracked issue — scope-check
 
 # Implement Issue
 
-Drive a single tracked issue from "Todo" to "ready for human merge" with disciplined scope, TDD-based implementation, and an automated review feedback loop.
+Drive a single tracked issue from "Todo" through "merge" with disciplined scope, TDD-based implementation, and an automated review feedback loop.
 
 ## Arg parsing
 
@@ -118,20 +118,16 @@ Steps:
    - If it's a nit you choose not to address → reply explaining why.
 4. After pushing fixes, re-dispatch Phase 5 (the /pr-review agent) so the automated check stays current. Loop until automated review returns clean **and** all human comments are addressed.
 
-## Phase 7 — Handoff to human merge
+## Phase 7 — Merge
 
 When (a) the automated review is clean and (b) all human comments are addressed:
 
 1. Post a final comment on the PR summarizing what was changed in response to feedback.
-2. **Stop.** A human reviews and merges unless the user explicitly tells you to merge.
-3. Kill the background poller and cancel any pending ScheduleWakeup.
-4. If/when the user confirms the PR is merged:
-   - Linear: `state: "Done"`
-   - GitHub: nothing extra needed (the `Closes` keyword handles the issue).
+2. If the PR is LGTM and does not require human feedback or approval for any ambiguous item, go ahead and merge.
+3. Mark the corresponding issue complete.
 
 ## Guardrails
 
-- **Never** merge the PR unless the user explicitly says to.
 - **Never** force-push to a branch with reviewer comments without telling the user first.
 - **Never** mark the issue Done if the PR isn't merged.
 - **Never** add `Co-Authored-By` lines (project CLAUDE.md rule).
