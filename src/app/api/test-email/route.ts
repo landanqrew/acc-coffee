@@ -9,7 +9,13 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { to } = (await request.json()) as { to?: string };
+  let body: { to?: string };
+  try {
+    body = (await request.json()) as { to?: string };
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { to } = body;
   if (!to) {
     return Response.json({ error: "Missing 'to' address" }, { status: 400 });
   }
