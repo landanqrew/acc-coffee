@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { invites, users } from "@/db/schema";
 import {
@@ -8,7 +8,23 @@ import {
   type Invite,
   type SignInDecision,
 } from "./access";
-import { assertLead, type Role } from "./roles";
+import { assertLead, isRole, type Role } from "./roles";
+
+/** Validates a role value read from the database rather than trusting it blindly. */
+function coerceRole(value: string, context: string): Role {
+  if (!isRole(value)) {
+    throw new Error(`Invalid role "${value}" in database (${context}).`);
+  }
+  return value;
+}
+
+/** A caller-facing problem with an invite (e.g. the email is already a member). */
+export class InviteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InviteError";
+  }
+}
 
 /** The configured first-Lead email, allowed to sign in before any invite exists. */
 function bootstrapEmail(): string | null {
@@ -58,12 +74,17 @@ export type CreateInviteInput = {
 };
 
 /**
- * Invites a team member by email with a role. Lead-only. Re-inviting an email
- * replaces the outstanding invite (latest wins).
+ * Invites a team member by email with a role. Lead-only. Re-inviting a pending
+ * email replaces the outstanding invite (latest wins). Inviting someone who is
+ * already a member is rejected — changing an existing member's role is a
+ * separate concern not in this slice.
  */
 export async function createInvite(input: CreateInviteInput): Promise<Invite> {
   assertLead(input.invitedByRole);
   const email = normalizeEmail(input.email);
+  if (await isExistingUser(email)) {
+    throw new InviteError(`${email} is already a team member.`);
+  }
   await db
     .insert(invites)
     .values({
@@ -113,7 +134,12 @@ export async function listMembers(): Promise<TeamMember[]> {
   const rows = await db.query.users.findMany({
     columns: { id: true, email: true, name: true, role: true },
   });
-  return rows.map((r) => ({ ...r, role: r.role as Role }));
+  return rows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    name: r.name,
+    role: coerceRole(r.role, `user ${r.id}`),
+  }));
 }
 
 export type PendingInvite = { email: string; role: Role; createdAt: Date };
@@ -121,9 +147,12 @@ export type PendingInvite = { email: string; role: Role; createdAt: Date };
 /** Outstanding invites that have not yet been accepted. */
 export async function listPendingInvites(): Promise<PendingInvite[]> {
   const rows = await db.query.invites.findMany({
-    columns: { email: true, role: true, createdAt: true, acceptedAt: true },
+    columns: { email: true, role: true, createdAt: true },
+    where: isNull(invites.acceptedAt),
   });
-  return rows
-    .filter((r) => !r.acceptedAt)
-    .map((r) => ({ email: r.email, role: r.role, createdAt: r.createdAt }));
+  return rows.map((r) => ({
+    email: r.email,
+    role: coerceRole(r.role, `invite ${r.email}`),
+    createdAt: r.createdAt,
+  }));
 }

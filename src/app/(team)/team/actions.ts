@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLead } from "@/lib/dal";
-import { createInvite } from "@/modules/auth/invites";
+import { createInvite, InviteError } from "@/modules/auth/invites";
 import { isRole } from "@/modules/auth/roles";
 
 export type InviteState = { error?: string; ok?: string } | undefined;
@@ -25,12 +25,20 @@ export async function inviteAction(
     return { error: "Choose a role." };
   }
 
-  await createInvite({
-    email,
-    role,
-    invitedByRole: lead.role,
-    invitedByUserId: lead.id,
-  });
+  try {
+    await createInvite({
+      email,
+      role,
+      invitedByRole: lead.role,
+      invitedByUserId: lead.id,
+    });
+  } catch (err) {
+    if (err instanceof InviteError) {
+      return { error: err.message };
+    }
+    console.error("Failed to create invite:", err);
+    return { error: "Couldn't send the invite. Please try again." };
+  }
 
   revalidatePath("/team");
   return { ok: `Invited ${email.toLowerCase()} as ${role}.` };

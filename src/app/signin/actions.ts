@@ -25,9 +25,12 @@ export async function signInAction(
 
   const { allowed } = await evaluateSignIn(email);
   if (allowed) {
-    // Sends the link and throws a redirect to the verifyRequest page.
+    // Sends the link and throws a redirect to the verifyRequest page, so the
+    // line below never runs on the allowed path.
     await signIn("resend", { email, redirectTo: "/dashboard" });
   }
 
+  // Not allowed: skip sending and fall through. Both paths land on the same page
+  // so we never disclose whether an address is on the team.
   redirect("/signin/check-email");
 }
