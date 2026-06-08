@@ -241,3 +241,13 @@ export const reports = pgTable("service_report", {
   answers: jsonb("answers").$type<ReportAnswers>().notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
 });
+
+/**
+ * Small key/value store for Lead-configured app settings — currently just the
+ * Church Admin email address that Restock Alerts are sent to (not an app user).
+ */
+export const settings = pgTable("setting", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+});

@@ -1,6 +1,8 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { stockCounts, supplies } from "@/db/schema";
+import { sendRestockAlert } from "@/lib/email";
+import { getChurchAdminEmail } from "@/modules/settings/settings";
 import {
   buildStockLevels,
   StockCountValidationError,
@@ -9,6 +11,7 @@ import {
   type StockCountSource,
   type StockLevel,
 } from "./stock-rules";
+import { decideRestockAlert, type RestockAlert } from "./restock-rules";
 
 export type { StockCount, StockLevel } from "./stock-rules";
 export { StockCountValidationError } from "./stock-rules";
@@ -18,7 +21,23 @@ export type RecordStockCountInput = {
   count: number;
   recordedByUserId?: string | null;
   source?: StockCountSource;
+  reportId?: string | null;
 };
+
+/**
+ * Emails the configured Church Admin a Restock Alert. Best-effort: a missing
+ * address or a send failure must never fail the underlying count, which is the
+ * source of truth.
+ */
+async function dispatchRestockAlert(alert: RestockAlert): Promise<void> {
+  try {
+    const to = await getChurchAdminEmail();
+    if (!to) return;
+    await sendRestockAlert(to, alert);
+  } catch (err) {
+    console.error("Failed to send restock alert:", err);
+  }
+}
 
 /**
  * Records an observed Stock Count for an active Supply. Any team member may do
@@ -33,11 +52,19 @@ export async function recordStockCount(
 
   const supply = await db.query.supplies.findFirst({
     where: and(eq(supplies.id, input.supplyId), isNull(supplies.retiredAt)),
-    columns: { id: true },
+    columns: { id: true, name: true, minimumLevel: true },
   });
   if (!supply) {
     throw new StockCountValidationError("That supply isn't available to count.");
   }
+
+  // The level before this count, to detect a fresh crossing below the minimum.
+  const prev = await db.query.stockCounts.findFirst({
+    where: eq(stockCounts.supplyId, input.supplyId),
+    columns: { count: true },
+    orderBy: [desc(stockCounts.countedAt), desc(stockCounts.id)],
+  });
+  const previousCount = prev?.count ?? null;
 
   const [row] = await db
     .insert(stockCounts)
@@ -46,8 +73,13 @@ export async function recordStockCount(
       count,
       source: input.source ?? "ad_hoc",
       recordedByUserId: input.recordedByUserId ?? null,
+      reportId: input.reportId ?? null,
     })
     .returning();
+
+  const alert = decideRestockAlert({ supply, previousCount, newCount: count });
+  if (alert) await dispatchRestockAlert(alert);
+
   return row;
 }
 

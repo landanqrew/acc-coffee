@@ -21,6 +21,22 @@ export async function sendEmail({ to, subject, text }: EmailMessage): Promise<vo
   }
 }
 
+/** Emails a Restock Alert to the Church Admin when a Supply crosses below its minimum. */
+export async function sendRestockAlert(
+  to: string,
+  alert: { supplyName: string; count: number; minimum: number },
+): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `Restock alert: ${alert.supplyName} is low`,
+    text:
+      `${alert.supplyName} has dropped below its minimum.\n\n` +
+      `Current count: ${alert.count}\n` +
+      `Minimum: ${alert.minimum}\n\n` +
+      "Time to restock.",
+  });
+}
+
 /** Emails a passwordless sign-in (magic) link to a team member. */
 export async function sendMagicLink(to: string, url: string): Promise<void> {
   await sendEmail({

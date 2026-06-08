@@ -19,6 +19,7 @@ export default async function TeamLayout({
           <Link href="/stock">Stock</Link>
           <Link href="/supplies">Supplies</Link>
           {isLead(user.role) && <Link href="/team">Team</Link>}
+          {isLead(user.role) && <Link href="/settings">Settings</Link>}
         </nav>
         <form action={signOutAction}>
           <button
