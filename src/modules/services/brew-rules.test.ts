@@ -51,6 +51,12 @@ describe("validateBrewQuantities", () => {
       BrewValidationError,
     );
   });
+
+  it("rejects scientific-notation strings rather than coercing them", () => {
+    expect(() => validateBrewQuantities({ regularPots: "1e2", decafPots: "2" })).toThrow(
+      BrewValidationError,
+    );
+  });
 });
 
 describe("comparableKey", () => {

@@ -33,11 +33,12 @@ function parsePots(value: unknown, label: string): number {
   if (text === "") {
     throw new BrewValidationError(`${label} is required.`);
   }
-  const n = Number(text);
-  if (!Number.isInteger(n) || n < 0) {
+  // Plain digits only — rejects negatives, decimals, and scientific notation
+  // ("1e2") that Number() would otherwise quietly accept from a raw POST.
+  if (!/^\d+$/.test(text)) {
     throw new BrewValidationError(`${label} must be a whole number of zero or more.`);
   }
-  return n;
+  return Number(text);
 }
 
 /** Validates planned brew quantities: regular and decaf each whole and zero-or-more. */

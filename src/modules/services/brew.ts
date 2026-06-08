@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { brewQuantities, reports, services } from "@/db/schema";
 import { assertLead, type Role } from "@/modules/auth/roles";
@@ -59,7 +59,8 @@ export async function setBrewQuantities(
         regularPots: q.regularPots,
         decafPots: q.decafPots,
         updatedByUserId: input.updatedByUserId ?? null,
-        updatedAt: new Date(),
+        // Stamp from the DB clock, matching the INSERT path's default now().
+        updatedAt: sql`now()`,
       },
     });
   return q;
@@ -91,7 +92,10 @@ async function getComparablePastServices(
         )
       : and(
           eq(services.kind, "ad_hoc"),
-          eq(services.name, target.name),
+          // Match comparableKey's case-insensitive name comparison so the pure
+          // layer actually sees casing variants rather than the SQL silently
+          // dropping them.
+          sql`lower(${services.name}) = lower(${target.name})`,
           lt(services.date, target.date),
         );
   return db.query.services.findMany({
