@@ -120,3 +120,36 @@ export const supplies = pgTable(
     ),
   ],
 );
+
+/**
+ * An observed Stock Count for a Supply — the inventory snapshot mechanism (see
+ * ADR-0001). Counts are never edited or deleted; the latest count (by
+ * `countedAt`) is the Supply's current level. `source` records whether the count
+ * came from an ad-hoc update or a Service Report.
+ */
+export const stockCounts = pgTable(
+  "stock_count",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    supplyId: text("supplyId")
+      .notNull()
+      .references(() => supplies.id, { onDelete: "cascade" }),
+    count: integer("count").notNull(),
+    source: text("source", { enum: ["ad_hoc", "service_report"] })
+      .notNull()
+      .default("ad_hoc"),
+    recordedByUserId: text("recordedByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    countedAt: timestamp("countedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("stock_count_nonneg", sql`${t.count} >= 0`),
+    check(
+      "stock_count_source",
+      sql`${t.source} in ('ad_hoc', 'service_report')`,
+    ),
+  ],
+);
