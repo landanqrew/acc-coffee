@@ -67,6 +67,22 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Service-day Runbook</h2>
+        <Link
+          href="/runbook"
+          className="block rounded-lg border border-neutral-200 p-4 hover:border-neutral-400"
+        >
+          <span className="font-medium underline-offset-2">
+            Open the Runbook →
+          </span>
+          <p className="mt-1 text-sm text-neutral-500">
+            Setup &amp; teardown checklist, equipment notes, and where supplies
+            live.
+          </p>
+        </Link>
+      </div>
+
       {isLead(user.role) && (
         <p className="text-sm">
           As a Lead, you can{" "}

@@ -18,6 +18,7 @@ export default async function TeamLayout({
           <Link href="/services">Services</Link>
           <Link href="/stock">Stock</Link>
           <Link href="/supplies">Supplies</Link>
+          <Link href="/runbook">Runbook</Link>
           <Link href="/feedback">Feedback</Link>
           {isLead(user.role) && <Link href="/team">Team</Link>}
           {isLead(user.role) && <Link href="/settings">Settings</Link>}

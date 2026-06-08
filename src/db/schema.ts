@@ -283,6 +283,35 @@ export const feedback = pgTable(
 );
 
 /**
+ * The service-day Runbook — tribal-knowledge capture (see CONTEXT.md). Three
+ * fixed content sections (setup/teardown checklist, equipment reference, supply
+ * locations), each a single markdown document a Lead edits and the whole team
+ * reads. Keyed by the fixed section id, so each section is one upserted row.
+ */
+export const runbookSections = pgTable(
+  "runbook_section",
+  {
+    section: text("section", {
+      enum: ["checklist", "equipment", "supply_locations"],
+    }).primaryKey(),
+    content: text("content").notNull().default(""),
+    updatedByUserId: text("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Mirror the app-level rules at the database, like every other table here.
+    // The Drizzle `enum` option is TypeScript-only and emits no CHECK on its own.
+    check(
+      "runbook_section_values",
+      sql`${t.section} in ('checklist', 'equipment', 'supply_locations')`,
+    ),
+    check("runbook_content_length", sql`char_length(${t.content}) <= 20000`),
+  ],
+);
+
+/**
  * The brew guidance a Lead sets for a Service — how many pots of regular and
  * decaf to brew. One per Service (the `serviceId` primary key). Human-in-the-loop
  * (see CONTEXT.md): the Lead is informed by past leftover data but always sets the
