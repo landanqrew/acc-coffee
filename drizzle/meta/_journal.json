@@ -43,6 +43,13 @@
       "when": 1780878246189,
       "tag": "0005_orange_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780878605904,
+      "tag": "0006_low_wasp",
+      "breakpoints": true
     }
   ]
 }
