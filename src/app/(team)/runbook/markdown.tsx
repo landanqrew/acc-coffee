@@ -3,6 +3,10 @@ import ReactMarkdown, { type Components } from "react-markdown";
 // Phone-first rendering of the Lead-authored Runbook markdown. react-markdown
 // escapes raw HTML and sanitizes link URLs by default, so this is safe to render
 // without dangerouslySetInnerHTML. Lists render as clear step-by-step lists.
+//
+// Heading levels are intentionally flattened: h1 and h2 both render as a small
+// h3, and h3 as an even smaller h4, so no section header blows up to large text
+// on a phone. The collapse is deliberate — don't "restore" the hierarchy.
 const components: Components = {
   h1: ({ children }) => (
     <h3 className="mt-4 text-base font-semibold first:mt-0">{children}</h3>

@@ -38,6 +38,12 @@ describe("validateContent", () => {
     );
   });
 
+  it("normalizes lone carriage returns to LF", () => {
+    expect(validateContent("- step one\r- step two")).toBe(
+      "- step one\n- step two",
+    );
+  });
+
   it("allows empty content — a blank section is valid", () => {
     expect(validateContent("   \n  ")).toBe("");
   });

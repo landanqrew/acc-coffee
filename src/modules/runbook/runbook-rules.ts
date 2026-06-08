@@ -65,12 +65,15 @@ export function parseSectionId(value: unknown): RunbookSectionId {
 }
 
 /**
- * Normalizes section content for storage: collapses CRLF to LF and trims
- * trailing whitespace so an emptied editor stores as "". Empty content is
+ * Normalizes section content for storage: collapses CRLF and lone CR to LF and
+ * trims trailing whitespace so an emptied editor stores as "". Empty content is
  * allowed — a blank section is valid. Rejects content past {@link CONTENT_MAX}.
  */
 export function validateContent(raw: string): string {
-  const content = raw.replace(/\r\n/g, "\n").replace(/\s+$/, "");
+  const content = raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\s+$/, "");
   if (content.length > CONTENT_MAX) {
     throw new RunbookValidationError(
       `Keep each section under ${CONTENT_MAX.toLocaleString()} characters.`,

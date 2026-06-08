@@ -301,7 +301,12 @@ export const runbookSections = pgTable(
     updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
-    // Mirror the app-level length cap at the database.
+    // Mirror the app-level rules at the database, like every other table here.
+    // The Drizzle `enum` option is TypeScript-only and emits no CHECK on its own.
+    check(
+      "runbook_section_values",
+      sql`${t.section} in ('checklist', 'equipment', 'supply_locations')`,
+    ),
     check("runbook_content_length", sql`char_length(${t.content}) <= 20000`),
   ],
 );

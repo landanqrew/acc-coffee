@@ -1,5 +1,5 @@
 {
-  "id": "3a6b83aa-995e-4bd4-9c4c-5c18eaebd3d7",
+  "id": "b6057947-3aa1-48ba-af3a-c680ec931839",
   "prevId": "37d290e4-4154-447c-aa88-d87c8d5bb3e2",
   "version": "7",
   "dialect": "postgresql",
@@ -492,6 +492,10 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "runbook_section_values": {
+          "name": "runbook_section_values",
+          "value": "\"runbook_section\".\"section\" in ('checklist', 'equipment', 'supply_locations')"
+        },
         "runbook_content_length": {
           "name": "runbook_content_length",
           "value": "char_length(\"runbook_section\".\"content\") <= 20000"

@@ -3,6 +3,7 @@ CREATE TABLE "runbook_section" (
 	"content" text DEFAULT '' NOT NULL,
 	"updatedByUserId" text,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "runbook_section_values" CHECK ("runbook_section"."section" in ('checklist', 'equipment', 'supply_locations')),
 	CONSTRAINT "runbook_content_length" CHECK (char_length("runbook_section"."content") <= 20000)
 );
 --> statement-breakpoint
