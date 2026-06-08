@@ -5,12 +5,14 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import type { ReportAnswers } from "@/modules/reports/report-rules";
 import type { AdapterAccountType } from "next-auth/adapters";
 
 /**
@@ -146,6 +148,11 @@ export const stockCounts = pgTable(
     recordedByUserId: text("recordedByUserId").references(() => users.id, {
       onDelete: "set null",
     }),
+    // Set when the count came in through a Service Report, linking it back to
+    // that report so the report's counts can be shown later.
+    reportId: text("reportId").references(() => reports.id, {
+      onDelete: "set null",
+    }),
     countedAt: timestamp("countedAt", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
@@ -213,3 +220,24 @@ export const services = pgTable(
     ),
   ],
 );
+
+/**
+ * A filed Service Report — the weekly ritual after a Service. Holds the fixed
+ * operational answers (`answers`, keyed by the in-code question set) and is the
+ * vehicle for Stock Counts: its rows in `stock_count` carry the designated
+ * Supply counts. A Service has at most one Report (unique `serviceId`).
+ */
+export const reports = pgTable("service_report", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  serviceId: text("serviceId")
+    .notNull()
+    .unique()
+    .references(() => services.id, { onDelete: "cascade" }),
+  filedByUserId: text("filedByUserId").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  answers: jsonb("answers").$type<ReportAnswers>().notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+});

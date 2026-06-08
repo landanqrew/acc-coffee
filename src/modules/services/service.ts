@@ -153,6 +153,12 @@ export async function listServices(): Promise<{
   };
 }
 
+/** A single Service by id, or null. */
+export async function getService(id: string): Promise<Service | null> {
+  const row = await db.query.services.findFirst({ where: eq(services.id, id) });
+  return row ? toService(row) : null;
+}
+
 /**
  * Every Service happening today (recurring + ad-hoc). Used by the Feedback
  * Survey and Service Report flows.
