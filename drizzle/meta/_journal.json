@@ -64,6 +64,13 @@
       "when": 1780879920190,
       "tag": "0008_flowery_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780880927039,
+      "tag": "0009_lonely_anthem",
+      "breakpoints": true
     }
   ]
 }

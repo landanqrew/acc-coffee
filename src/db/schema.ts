@@ -253,6 +253,34 @@ export const settings = pgTable("setting", {
 });
 
 /**
+ * An anonymous Feedback Survey response from a congregant. Attributed to a
+ * Service by the congregant's own selection (per PRD) — no account, no user
+ * link. Holds the fixed coffee-quality ratings (taste/temperature/variety, each
+ * 1–5) and an optional free-text comment. Aggregated per Service beside its Report.
+ */
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    serviceId: text("serviceId")
+      .notNull()
+      .references(() => services.id, { onDelete: "cascade" }),
+    taste: integer("taste").notNull(),
+    temperature: integer("temperature").notNull(),
+    variety: integer("variety").notNull(),
+    comment: text("comment"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("feedback_taste_range", sql`${t.taste} between 1 and 5`),
+    check("feedback_temperature_range", sql`${t.temperature} between 1 and 5`),
+    check("feedback_variety_range", sql`${t.variety} between 1 and 5`),
+  ],
+);
+
+/**
  * The brew guidance a Lead sets for a Service — how many pots of regular and
  * decaf to brew. One per Service (the `serviceId` primary key). Human-in-the-loop
  * (see CONTEXT.md): the Lead is informed by past leftover data but always sets the
