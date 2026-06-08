@@ -1,0 +1,2 @@
+CREATE INDEX "service_date_time_idx" ON "service" USING btree ("date","time");--> statement-breakpoint
+ALTER TABLE "service" ADD CONSTRAINT "service_kind_schedule" CHECK (("service"."kind" = 'recurring' and "service"."scheduleId" is not null) or ("service"."kind" = 'ad_hoc' and "service"."scheduleId" is null));
