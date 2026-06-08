@@ -11,4 +11,5 @@ CREATE TABLE "feedback" (
 	CONSTRAINT "feedback_variety_range" CHECK ("feedback"."variety" between 1 and 5)
 );
 --> statement-breakpoint
-ALTER TABLE "feedback" ADD CONSTRAINT "feedback_serviceId_service_id_fk" FOREIGN KEY ("serviceId") REFERENCES "public"."service"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_serviceId_service_id_fk" FOREIGN KEY ("serviceId") REFERENCES "public"."service"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "feedback_service_created_idx" ON "feedback" USING btree ("serviceId","createdAt");

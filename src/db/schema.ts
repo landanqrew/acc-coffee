@@ -274,6 +274,8 @@ export const feedback = pgTable(
     createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
+    // getFeedbackSummary reads by service and orders by time; index that path.
+    index("feedback_service_created_idx").on(t.serviceId, t.createdAt),
     check("feedback_taste_range", sql`${t.taste} between 1 and 5`),
     check("feedback_temperature_range", sql`${t.temperature} between 1 and 5`),
     check("feedback_variety_range", sql`${t.variety} between 1 and 5`),

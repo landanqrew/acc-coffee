@@ -1,5 +1,5 @@
 {
-  "id": "601c4041-d23d-4d64-8b57-51003f8dedb2",
+  "id": "37d290e4-4154-447c-aa88-d87c8d5bb3e2",
   "prevId": "b141242a-30bf-450d-894f-eadea16987df",
   "version": "7",
   "dialect": "postgresql",
@@ -233,7 +233,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "feedback_service_created_idx": {
+          "name": "feedback_service_created_idx",
+          "columns": [
+            {
+              "expression": "serviceId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "feedback_serviceId_service_id_fk": {
           "name": "feedback_serviceId_service_id_fk",
