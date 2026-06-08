@@ -2,11 +2,13 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   integer,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -151,5 +153,55 @@ export const stockCounts = pgTable(
       "stock_count_source",
       sql`${t.source} in ('ad_hoc', 'service_report')`,
     ),
+  ],
+);
+
+/**
+ * A recurring weekly gathering definition (e.g. "9am Gathering" every Sunday).
+ * Leads configure these; the calendar materializes a Service per occurrence.
+ */
+export const serviceSchedules = pgTable(
+  "service_schedule",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    // 0 = Sunday … 6 = Saturday.
+    weekday: integer("weekday").notNull(),
+    time: text("time").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("service_schedule_weekday", sql`${t.weekday} between 0 and 6`),
+    check("service_schedule_time", sql`${t.time} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
+  ],
+);
+
+/**
+ * A single Service — one Sunday gathering, or an ad-hoc special event. Recurring
+ * Services are materialized from a `serviceSchedule` (one per date, deduped by
+ * the unique (scheduleId, date)); ad-hoc Services stand alone with no schedule.
+ */
+export const services = pgTable(
+  "service",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    date: date("date", { mode: "string" }).notNull(),
+    time: text("time").notNull(),
+    kind: text("kind", { enum: ["recurring", "ad_hoc"] }).notNull(),
+    scheduleId: text("scheduleId").references(() => serviceSchedules.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("service_schedule_date").on(t.scheduleId, t.date),
+    check("service_kind", sql`${t.kind} in ('recurring', 'ad_hoc')`),
+    check("service_time", sql`${t.time} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
   ],
 );
