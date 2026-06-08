@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { reports, services, stockCounts, supplies } from "@/db/schema";
+import { recordStockCount } from "@/modules/inventory/stock";
 import type { Supply } from "@/modules/inventory/supply";
 import {
   planReport,
@@ -107,16 +108,17 @@ export async function fileReport(input: {
     throw err;
   }
 
-  if (plan.counts.length > 0) {
-    await db.insert(stockCounts).values(
-      plan.counts.map((c) => ({
-        supplyId: c.supplyId,
-        count: c.count,
-        source: "service_report" as const,
-        recordedByUserId: input.filedByUserId ?? null,
-        reportId: report.id,
-      })),
-    );
+  // Push each count through the inventory path so it lands as a Stock Count
+  // (last-count-wins) and fires a Restock Alert on a fresh crossing, exactly
+  // like an ad-hoc count.
+  for (const c of plan.counts) {
+    await recordStockCount({
+      supplyId: c.supplyId,
+      count: c.count,
+      source: "service_report",
+      recordedByUserId: input.filedByUserId ?? null,
+      reportId: report.id,
+    });
   }
 
   return report;

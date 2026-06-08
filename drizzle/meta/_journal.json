@@ -50,6 +50,13 @@
       "when": 1780878605904,
       "tag": "0006_low_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780879359314,
+      "tag": "0007_silent_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }
