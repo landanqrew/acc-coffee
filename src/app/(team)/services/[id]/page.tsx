@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
 import { getService } from "@/modules/services/service";
 import { getBrewEditContext, getBrewQuantities } from "@/modules/services/brew";
+import { FEEDBACK_RATINGS, getFeedbackSummary } from "@/modules/feedback/feedback";
 import {
   getReportDetail,
   listDesignatedSupplies,
@@ -46,6 +47,7 @@ export default async function ServiceReportPage({
   const brewQuantities = lead ? brew!.current : await getBrewQuantities(service.id);
 
   const detail = await getReportDetail(id);
+  const feedback = await getFeedbackSummary(id);
   // Only the filing form needs the designated Supplies; skip the query on the
   // happy read path where a Report already exists.
   const designated = detail ? [] : await listDesignatedSupplies();
@@ -144,6 +146,51 @@ export default async function ServiceReportPage({
           designated={designated}
         />
       )}
+
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-medium">Congregant feedback</h2>
+          <span className="text-sm text-neutral-500">
+            {feedback.responseCount === 1
+              ? "1 response"
+              : `${feedback.responseCount} responses`}
+          </span>
+        </div>
+        {feedback.averages ? (
+          <div className="space-y-4">
+            <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+              {FEEDBACK_RATINGS.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex justify-between gap-4 px-4 py-3 text-sm"
+                >
+                  <dt className="text-neutral-500">{r.label}</dt>
+                  <dd className="text-right font-medium">
+                    {feedback.averages![r.id].toFixed(1)}{" "}
+                    <span className="text-neutral-400">/ 5</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {feedback.comments.length > 0 && (
+              <ul className="space-y-2">
+                {feedback.comments.map((c, i) => (
+                  <li
+                    key={i}
+                    className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-neutral-700"
+                  >
+                    “{c}”
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-400">
+            No feedback yet for this service.
+          </p>
+        )}
+      </div>
     </section>
   );
 }
