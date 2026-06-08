@@ -71,6 +71,13 @@
       "when": 1780881639827,
       "tag": "0009_bumpy_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780882247935,
+      "tag": "0010_smooth_darkhawk",
+      "breakpoints": true
     }
   ]
 }
