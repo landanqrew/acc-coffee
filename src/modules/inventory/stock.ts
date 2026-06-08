@@ -59,13 +59,12 @@ export async function recordStockCount(
   }
 
   // The level before this count, to detect a fresh crossing below the minimum.
-  const prev = await db.query.stockCounts.findMany({
+  const prev = await db.query.stockCounts.findFirst({
     where: eq(stockCounts.supplyId, input.supplyId),
     columns: { count: true },
     orderBy: [desc(stockCounts.countedAt), desc(stockCounts.id)],
-    limit: 1,
   });
-  const previousCount = prev[0]?.count ?? null;
+  const previousCount = prev?.count ?? null;
 
   const [row] = await db
     .insert(stockCounts)

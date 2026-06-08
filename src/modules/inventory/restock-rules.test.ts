@@ -22,7 +22,10 @@ describe("decideRestockAlert", () => {
   });
 
   it("suppresses re-alerts while still below the minimum", () => {
+    // Already below (2) and drops further (1) — no re-alert.
     expect(decideRestockAlert({ supply, previousCount: 2, newCount: 1 })).toBeNull();
+    // Still below (4 < 5) after a partial top-up from a below level — no re-alert
+    // until it recovers to/above the minimum and crosses anew.
     expect(decideRestockAlert({ supply, previousCount: 2, newCount: 4 })).toBeNull();
   });
 
