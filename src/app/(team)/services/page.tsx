@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
 import { listSchedule, listServices, type Service } from "@/modules/services/service";
@@ -23,18 +24,26 @@ function formatTime(time: string): string {
 
 function ServiceRow({ service }: { service: Service }) {
   return (
-    <li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-      <div>
-        <span className="font-medium">{service.name}</span>
-        {service.kind === "ad_hoc" && (
-          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-            Special
-          </span>
-        )}
-        <div className="text-neutral-500">
-          {formatDate(service.date)} · {formatTime(service.time)}
+    <li>
+      <Link
+        href={`/services/${service.id}`}
+        className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-neutral-50"
+      >
+        <div>
+          <span className="font-medium">{service.name}</span>
+          {service.kind === "ad_hoc" && (
+            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+              Special
+            </span>
+          )}
+          <div className="text-neutral-500">
+            {formatDate(service.date)} · {formatTime(service.time)}
+          </div>
         </div>
-      </div>
+        <span className="text-neutral-400" aria-hidden>
+          ›
+        </span>
+      </Link>
     </li>
   );
 }
