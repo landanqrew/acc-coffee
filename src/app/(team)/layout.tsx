@@ -15,6 +15,7 @@ export default async function TeamLayout({
       <header className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
         <nav className="flex items-center gap-4 text-sm font-medium">
           <Link href="/dashboard">Dashboard</Link>
+          <Link href="/stock">Stock</Link>
           <Link href="/supplies">Supplies</Link>
           {isLead(user.role) && <Link href="/team">Team</Link>}
         </nav>
