@@ -145,5 +145,11 @@ export const stockCounts = pgTable(
     }),
     countedAt: timestamp("countedAt", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [check("stock_count_nonneg", sql`${t.count} >= 0`)],
+  (t) => [
+    check("stock_count_nonneg", sql`${t.count} >= 0`),
+    check(
+      "stock_count_source",
+      sql`${t.source} in ('ad_hoc', 'service_report')`,
+    ),
+  ],
 );

@@ -5,7 +5,8 @@ CREATE TABLE "stock_count" (
 	"source" text DEFAULT 'ad_hoc' NOT NULL,
 	"recordedByUserId" text,
 	"countedAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "stock_count_nonneg" CHECK ("stock_count"."count" >= 0)
+	CONSTRAINT "stock_count_nonneg" CHECK ("stock_count"."count" >= 0),
+	CONSTRAINT "stock_count_source" CHECK ("stock_count"."source" in ('ad_hoc', 'service_report'))
 );
 --> statement-breakpoint
 ALTER TABLE "stock_count" ADD CONSTRAINT "stock_count_supplyId_supply_id_fk" FOREIGN KEY ("supplyId") REFERENCES "public"."supply"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

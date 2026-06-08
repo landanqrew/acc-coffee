@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { stockCounts, supplies } from "@/db/schema";
 import {
@@ -63,6 +63,10 @@ export async function getStockLevels(): Promise<StockLevel[]> {
 
   const counts = await db.query.stockCounts.findMany({
     columns: { id: true, supplyId: true, count: true, countedAt: true },
+    where: inArray(
+      stockCounts.supplyId,
+      activeSupplies.map((s) => s.id),
+    ),
   });
   return buildStockLevels(activeSupplies, counts);
 }

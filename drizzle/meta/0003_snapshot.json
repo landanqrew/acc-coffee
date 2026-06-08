@@ -1,5 +1,5 @@
 {
-  "id": "9b7b6f6b-180a-4f8d-ab23-c4c8ce75edb2",
+  "id": "8a3b5e5e-e675-439a-bf06-9789b903064b",
   "prevId": "c199319c-6d64-4169-9849-0ba1fced89e4",
   "version": "7",
   "dialect": "postgresql",
@@ -301,6 +301,10 @@
         "stock_count_nonneg": {
           "name": "stock_count_nonneg",
           "value": "\"stock_count\".\"count\" >= 0"
+        },
+        "stock_count_source": {
+          "name": "stock_count_source",
+          "value": "\"stock_count\".\"source\" in ('ad_hoc', 'service_report')"
         }
       },
       "isRLSEnabled": false

@@ -13,6 +13,7 @@ export async function recordCountAction(
 ): Promise<CountState> {
   const user = await requireSession();
   const supplyId = String(formData.get("supplyId") ?? "");
+  if (!supplyId) return { error: "Pick a supply to count." };
   const raw = String(formData.get("count") ?? "").trim();
   if (raw === "") return { error: "Enter a count." };
 
