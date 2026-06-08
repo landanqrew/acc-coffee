@@ -16,7 +16,9 @@ export async function setBrewQuantitiesAction(
   formData: FormData,
 ): Promise<BrewFormState> {
   const lead = await requireLead();
-  const serviceId = String(formData.get("serviceId") ?? "");
+  const rawServiceId = formData.get("serviceId");
+  const serviceId = typeof rawServiceId === "string" ? rawServiceId.trim() : "";
+  if (!serviceId) return { error: "Invalid service." };
   try {
     await setBrewQuantities(lead.role, {
       serviceId,
