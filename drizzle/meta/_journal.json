@@ -57,6 +57,13 @@
       "when": 1780879359314,
       "tag": "0007_silent_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780879920190,
+      "tag": "0008_flowery_tinkerer",
+      "breakpoints": true
     }
   ]
 }

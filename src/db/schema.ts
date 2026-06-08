@@ -251,3 +251,28 @@ export const settings = pgTable("setting", {
   value: text("value").notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 });
+
+/**
+ * The brew guidance a Lead sets for a Service — how many pots of regular and
+ * decaf to brew. One per Service (the `serviceId` primary key). Human-in-the-loop
+ * (see CONTEXT.md): the Lead is informed by past leftover data but always sets the
+ * numbers themselves; new Services default to the previous comparable Service.
+ */
+export const brewQuantities = pgTable(
+  "brew_quantity",
+  {
+    serviceId: text("serviceId")
+      .primaryKey()
+      .references(() => services.id, { onDelete: "cascade" }),
+    regularPots: integer("regularPots").notNull(),
+    decafPots: integer("decafPots").notNull(),
+    updatedByUserId: text("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("brew_quantity_regular_nonneg", sql`${t.regularPots} >= 0`),
+    check("brew_quantity_decaf_nonneg", sql`${t.decafPots} >= 0`),
+  ],
+);
