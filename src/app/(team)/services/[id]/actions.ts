@@ -1,12 +1,38 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/dal";
+import { requireLead, requireSession } from "@/lib/dal";
 import {
   fileReport,
   REPORT_QUESTIONS,
   ReportValidationError,
 } from "@/modules/reports/report";
+import { BrewValidationError, setBrewQuantities } from "@/modules/services/brew";
+
+export type BrewFormState = { error?: string; ok?: string } | undefined;
+
+export async function setBrewQuantitiesAction(
+  _prev: BrewFormState,
+  formData: FormData,
+): Promise<BrewFormState> {
+  const lead = await requireLead();
+  const serviceId = String(formData.get("serviceId") ?? "");
+  try {
+    await setBrewQuantities(lead.role, {
+      serviceId,
+      regularPots: formData.get("regularPots"),
+      decafPots: formData.get("decafPots"),
+      updatedByUserId: lead.id,
+    });
+    revalidatePath(`/services/${serviceId}`);
+    revalidatePath("/dashboard");
+    return { ok: "Brew quantities saved." };
+  } catch (err) {
+    if (err instanceof BrewValidationError) return { error: err.message };
+    console.error("Failed to set brew quantities:", err);
+    return { error: "Couldn't save the quantities. Please try again." };
+  }
+}
 
 export type ReportFormState = { error?: string; ok?: string } | undefined;
 

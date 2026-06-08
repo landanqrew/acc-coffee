@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/dal";
+import { isLead } from "@/modules/auth/roles";
 import { getService } from "@/modules/services/service";
+import { getBrewEditContext, getBrewQuantities } from "@/modules/services/brew";
 import {
   getReportDetail,
   listDesignatedSupplies,
   REPORT_QUESTIONS,
 } from "@/modules/reports/report";
+import { BrewForm } from "./brew-form";
 import { ReportForm } from "./report-form";
 
 function formatDate(date: string): string {
@@ -30,11 +33,17 @@ export default async function ServiceReportPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireSession();
+  const user = await requireSession();
   const { id } = await params;
 
   const service = await getService(id);
   if (!service) notFound();
+
+  const lead = isLead(user.role);
+  // Leads get the editor (current value, inherited default, leftover history);
+  // Volunteers only need the set quantities to read.
+  const brew = lead ? await getBrewEditContext(service) : null;
+  const brewQuantities = lead ? brew!.current : await getBrewQuantities(service.id);
 
   const detail = await getReportDetail(id);
   // Only the filing form needs the designated Supplies; skip the query on the
@@ -54,6 +63,33 @@ export default async function ServiceReportPage({
         <p className="text-sm text-neutral-500">
           {formatDate(service.date)} · {formatTime(service.time)}
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Brew quantities</h2>
+        {lead ? (
+          <BrewForm
+            serviceId={service.id}
+            current={brew!.current}
+            default={brew!.default}
+            history={brew!.history}
+          />
+        ) : brewQuantities ? (
+          <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+            <div className="flex justify-between gap-4 px-4 py-3 text-sm">
+              <dt className="text-neutral-500">Regular (pots)</dt>
+              <dd className="text-right font-medium">{brewQuantities.regularPots}</dd>
+            </div>
+            <div className="flex justify-between gap-4 px-4 py-3 text-sm">
+              <dt className="text-neutral-500">Decaf (pots)</dt>
+              <dd className="text-right font-medium">{brewQuantities.decafPots}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="text-sm text-neutral-400">
+            A Lead hasn&rsquo;t set brew quantities for this Service yet.
+          </p>
+        )}
       </div>
 
       {detail ? (
