@@ -7,7 +7,6 @@ import {
   REPORT_QUESTIONS,
   ReportValidationError,
 } from "@/modules/reports/report";
-import { listDesignatedSupplies } from "@/modules/reports/report";
 
 export type ReportFormState = { error?: string; ok?: string } | undefined;
 
@@ -23,11 +22,11 @@ export async function fileReportAction(
     answers[q.id] = formData.get(q.id);
   }
 
-  // Counts arrive as count_<supplyId> fields; key them by supply id.
-  const designated = await listDesignatedSupplies();
+  // Counts arrive as count_<supplyId> fields; key them by supply id. fileReport
+  // loads the designated Supplies and rejects any that are missing here.
   const counts: Record<string, unknown> = {};
-  for (const supply of designated) {
-    counts[supply.id] = formData.get(`count_${supply.id}`);
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("count_")) counts[key.slice("count_".length)] = value;
   }
 
   try {

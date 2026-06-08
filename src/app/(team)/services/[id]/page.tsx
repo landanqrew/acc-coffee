@@ -36,10 +36,10 @@ export default async function ServiceReportPage({
   const service = await getService(id);
   if (!service) notFound();
 
-  const [detail, designated] = await Promise.all([
-    getReportDetail(id),
-    listDesignatedSupplies(),
-  ]);
+  const detail = await getReportDetail(id);
+  // Only the filing form needs the designated Supplies; skip the query on the
+  // happy read path where a Report already exists.
+  const designated = detail ? [] : await listDesignatedSupplies();
 
   return (
     <section className="mx-auto max-w-2xl space-y-8">

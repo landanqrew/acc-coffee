@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { reports, services, stockCounts, supplies } from "@/db/schema";
 import type { Supply } from "@/modules/inventory/supply";
@@ -25,6 +25,16 @@ export type ReportCount = { supplyId: string; supplyName: string; count: number 
 
 /** A Report plus the counts it recorded — the per-Service report view. */
 export type ReportDetail = { report: Report; counts: ReportCount[] };
+
+/** Whether a thrown DB error is a Postgres unique-constraint violation (23505). */
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
+}
 
 /** Active Supplies designated for counting on every Service Report, alphabetized. */
 export async function listDesignatedSupplies(): Promise<Supply[]> {
@@ -77,14 +87,25 @@ export async function fileReport(input: {
     counts: input.counts,
   });
 
-  const [report] = await db
-    .insert(reports)
-    .values({
-      serviceId: input.serviceId,
-      filedByUserId: input.filedByUserId ?? null,
-      answers: plan.answers,
-    })
-    .returning();
+  let report: Report;
+  try {
+    [report] = await db
+      .insert(reports)
+      .values({
+        serviceId: input.serviceId,
+        filedByUserId: input.filedByUserId ?? null,
+        answers: plan.answers,
+      })
+      .returning();
+  } catch (err) {
+    // A concurrent submission can slip past the app-level check above and lose
+    // the race to the unique(serviceId) constraint — translate that to the same
+    // friendly message rather than a generic 500.
+    if (isUniqueViolation(err)) {
+      throw new ReportValidationError("This service already has a report.");
+    }
+    throw err;
+  }
 
   if (plan.counts.length > 0) {
     await db.insert(stockCounts).values(
@@ -114,6 +135,10 @@ export async function getReportDetail(serviceId: string): Promise<ReportDetail |
 
   const supplyRows = await db.query.supplies.findMany({
     columns: { id: true, name: true },
+    where: inArray(
+      supplies.id,
+      countRows.map((c) => c.supplyId),
+    ),
   });
   const nameById = new Map(supplyRows.map((s) => [s.id, s.name]));
 
