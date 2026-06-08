@@ -1,8 +1,7 @@
 import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
-import { listSchedule, listServices, today, type Service } from "@/modules/services/service";
-import { removeScheduleAction } from "./actions";
-import { AdHocForm, ScheduleForm } from "./service-forms";
+import { listSchedule, listServices, type Service } from "@/modules/services/service";
+import { AdHocForm, RemoveScheduleForm, ScheduleForm } from "./service-forms";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -53,12 +52,11 @@ function ServiceList({ services }: { services: Service[] }) {
 export default async function ServicesPage() {
   const user = await requireSession();
   const lead = isLead(user.role);
-  const [{ upcoming, past }, schedule] = await Promise.all([
+  const [{ upcoming, past, today: t }, schedule] = await Promise.all([
     listServices(),
     lead ? listSchedule() : Promise.resolve([]),
   ]);
 
-  const t = today();
   const todays = upcoming.filter((s) => s.date === t);
   const laterUpcoming = upcoming.filter((s) => s.date > t);
 
@@ -104,15 +102,7 @@ export default async function ServicesPage() {
                       <strong>{entry.name}</strong> · {WEEKDAYS[entry.weekday]}{" "}
                       {formatTime(entry.time)}
                     </span>
-                    <form action={removeScheduleAction}>
-                      <input type="hidden" name="id" value={entry.id} />
-                      <button
-                        type="submit"
-                        className="text-red-600 underline-offset-2 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    </form>
+                    <RemoveScheduleForm id={entry.id} />
                   </li>
                 ))}
               </ul>

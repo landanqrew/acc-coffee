@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import {
   addScheduleAction,
   createAdHocAction,
+  removeScheduleAction,
   type ServiceFormState,
 } from "./actions";
 
@@ -94,6 +95,31 @@ export function AdHocForm() {
       <button type="submit" disabled={pending} className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
         {pending ? "Saving…" : "Add service"}
       </button>
+    </form>
+  );
+}
+
+export function RemoveScheduleForm({ id }: { id: string }) {
+  const [state, action, pending] = useActionState<ServiceFormState, FormData>(
+    removeScheduleAction,
+    undefined,
+  );
+
+  return (
+    <form action={action} className="flex flex-col items-end gap-1">
+      <input type="hidden" name="id" value={id} />
+      <button
+        type="submit"
+        disabled={pending}
+        className="text-red-600 underline-offset-2 hover:underline disabled:opacity-60"
+      >
+        {pending ? "Removing…" : "Remove"}
+      </button>
+      {state?.error && (
+        <span className="text-xs text-red-600" role="alert">
+          {state.error}
+        </span>
+      )}
     </form>
   );
 }

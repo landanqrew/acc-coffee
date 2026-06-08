@@ -17,9 +17,13 @@ export async function addScheduleAction(
 ): Promise<ServiceFormState> {
   const lead = await requireLead();
   try {
+    const weekdayRaw = formData.get("weekday");
+    if (typeof weekdayRaw !== "string" || weekdayRaw.trim() === "") {
+      return { error: "Day is required." };
+    }
     const entry = await addScheduleEntry(lead.role, {
       name: String(formData.get("name") ?? ""),
-      weekday: Number(formData.get("weekday")),
+      weekday: Number(weekdayRaw),
       time: String(formData.get("time") ?? ""),
     });
     revalidatePath("/services");
@@ -31,14 +35,20 @@ export async function addScheduleAction(
   }
 }
 
-export async function removeScheduleAction(formData: FormData): Promise<void> {
+export async function removeScheduleAction(
+  _prev: ServiceFormState,
+  formData: FormData,
+): Promise<ServiceFormState> {
   const lead = await requireLead();
   try {
     await removeScheduleEntry(lead.role, String(formData.get("id") ?? ""));
+    revalidatePath("/services");
+    return { ok: "Removed gathering." };
   } catch (err) {
+    if (err instanceof ServiceValidationError) return { error: err.message };
     console.error("Failed to remove schedule entry:", err);
+    return { error: "Couldn't remove the gathering. Please try again." };
   }
-  revalidatePath("/services");
 }
 
 export async function createAdHocAction(

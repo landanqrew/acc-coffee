@@ -4,7 +4,6 @@ import { services, serviceSchedules } from "@/db/schema";
 import { assertLead, type Role } from "@/modules/auth/roles";
 import {
   planRecurringServices,
-  servicesOn,
   validateAdHocService,
   validateScheduleEntry,
   type ScheduleEntry,
@@ -58,7 +57,12 @@ export async function addScheduleEntry(
   return { id: row.id, name: row.name, weekday: row.weekday, time: row.time };
 }
 
-/** Retires a recurring gathering — it stops materializing future Services. */
+/**
+ * Retires a recurring gathering: it stops materializing future Services and any
+ * already-materialized current/future occurrences are removed so they no longer
+ * appear on the calendar. Past Services stay as history. (neon-http has no
+ * transactions, so this is two statements — deactivate first, then purge.)
+ */
 export async function removeScheduleEntry(
   actorRole: Role | null | undefined,
   id: string,
@@ -68,6 +72,15 @@ export async function removeScheduleEntry(
     .update(serviceSchedules)
     .set({ active: false })
     .where(eq(serviceSchedules.id, id));
+  await db
+    .delete(services)
+    .where(
+      and(
+        eq(services.scheduleId, id),
+        eq(services.kind, "recurring"),
+        gte(services.date, today()),
+      ),
+    );
 }
 
 // --- Services ---
@@ -111,25 +124,30 @@ export async function materializeWindow(from: string, to: string): Promise<void>
     .onConflictDoNothing({ target: [services.scheduleId, services.date] });
 }
 
-function windowAroundToday(): { from: string; to: string } {
-  const t = today();
+function windowAround(t: string): { from: string; to: string } {
   return { from: shift(t, -PAST_DAYS), to: shift(t, FUTURE_DAYS) };
 }
 
-/** Upcoming and past Services across the rolling window, newest-first for past. */
+/**
+ * Upcoming and past Services across the rolling window, newest-first for past.
+ * Returns the `today` boundary it used so callers split the same way without
+ * recomputing (which could diverge across a midnight rollover).
+ */
 export async function listServices(): Promise<{
   upcoming: Service[];
   past: Service[];
+  today: string;
 }> {
-  const { from, to } = windowAroundToday();
+  const t = today();
+  const { from, to } = windowAround(t);
   await materializeWindow(from, to);
   const rows = await db.query.services.findMany({
     where: and(gte(services.date, from), lte(services.date, to)),
     orderBy: [asc(services.date), asc(services.time)],
   });
   const all = rows.map(toService);
-  const t = today();
   return {
+    today: t,
     upcoming: all.filter((s) => s.date >= t),
     past: all.filter((s) => s.date < t).reverse(),
   };
@@ -140,14 +158,14 @@ export async function listServices(): Promise<{
  * Survey and Service Report flows.
  */
 export async function getTodaysServices(): Promise<Service[]> {
-  const { from, to } = windowAroundToday();
-  await materializeWindow(from, to);
   const t = today();
+  const { from, to } = windowAround(t);
+  await materializeWindow(from, to);
   const rows = await db.query.services.findMany({
     where: eq(services.date, t),
     orderBy: [asc(services.time)],
   });
-  return servicesOn(rows.map(toService), t);
+  return rows.map(toService);
 }
 
 function toService(row: {
