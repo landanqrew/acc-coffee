@@ -71,11 +71,30 @@ describe("validateFeedback — ratings and comment", () => {
     expect(result.comment).toBeNull();
   });
 
-  it("rejects a rating outside 1–5", () => {
+  it("accepts the 1 and 5 boundary ratings", () => {
+    const result = validateFeedback({
+      serviceId: "svc-9am",
+      ratings: { taste: "1", temperature: "5", variety: "1" },
+      todaysServiceIds: ["svc-9am"],
+    });
+    expect(result).toMatchObject({ taste: 1, temperature: 5, variety: 1 });
+  });
+
+  it("rejects a rating above 5", () => {
     expect(() =>
       validateFeedback({
         serviceId: "svc-9am",
         ratings: { ...goodRatings, taste: "6" },
+        todaysServiceIds: ["svc-9am"],
+      }),
+    ).toThrow(FeedbackValidationError);
+  });
+
+  it("rejects a rating below 1", () => {
+    expect(() =>
+      validateFeedback({
+        serviceId: "svc-9am",
+        ratings: { ...goodRatings, temperature: "0" },
         todaysServiceIds: ["svc-9am"],
       }),
     ).toThrow(FeedbackValidationError);
