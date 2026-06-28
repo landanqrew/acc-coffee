@@ -1,8 +1,8 @@
 import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
 import { listActiveSupplies } from "@/modules/inventory/supply";
-import { retireSupplyAction } from "./actions";
-import { SupplyForm } from "./supply-form";
+import { AddSupply } from "./add-supply";
+import { SupplyCard } from "./supply-card";
 
 export default async function SuppliesPage() {
   const user = await requireSession();
@@ -10,56 +10,30 @@ export default async function SuppliesPage() {
   const supplies = await listActiveSupplies();
 
   return (
-    <section className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Supplies</h1>
-        <p className="text-sm text-neutral-500">
-          {lead
-            ? "Add, edit, and retire the items the team tracks."
-            : "The items the team tracks. Only a Lead can change these."}
-        </p>
+    <section className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Supplies</h1>
+          <p className="text-sm text-muted-foreground">
+            {lead
+              ? "The items the team tracks. Tap a supply to edit or retire it."
+              : "The items the team tracks. Only a Lead can change these."}
+          </p>
+        </div>
+        {lead && <AddSupply />}
       </div>
 
-      {lead && (
-        <div className="rounded-lg border border-neutral-200 p-4">
-          <h2 className="mb-3 text-lg font-medium">Add a supply</h2>
-          <SupplyForm />
-        </div>
-      )}
-
       {supplies.length === 0 ? (
-        <p className="text-sm text-neutral-400">No supplies yet.</p>
+        <p className="text-sm text-subtle">
+          {lead
+            ? "No supplies yet. Add the first one to start tracking."
+            : "No supplies yet. A Lead can add them."}
+        </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {supplies.map((supply) => (
-            <li
-              key={supply.id}
-              className="rounded-lg border border-neutral-200 p-4"
-            >
-              {lead ? (
-                <div className="space-y-3">
-                  <SupplyForm supply={supply} />
-                  <form action={retireSupplyAction}>
-                    <input type="hidden" name="id" value={supply.id} />
-                    <button
-                      type="submit"
-                      className="text-sm text-red-600 underline-offset-2 hover:underline"
-                    >
-                      Retire
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-medium">{supply.name}</span>
-                  <span className="text-sm text-neutral-500">
-                    {supply.designated && <span className="mr-2">counted</span>}
-                    {supply.minimumLevel != null
-                      ? `min ${supply.minimumLevel}`
-                      : "no min"}
-                  </span>
-                </div>
-              )}
+            <li key={supply.id}>
+              <SupplyCard supply={supply} lead={lead} />
             </li>
           ))}
         </ul>
