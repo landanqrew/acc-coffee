@@ -12,3 +12,9 @@ export {
   fieldInputVariants,
   type FieldProps,
 } from "./field";
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from "./sheet";

@@ -27,7 +27,9 @@ export async function setBrewQuantitiesAction(
       updatedByUserId: lead.id,
     });
     revalidatePath(`/services/${serviceId}`);
-    revalidatePath("/dashboard");
+    // Services is the home now and surfaces today's brew quantities, so refresh
+    // it (the old /dashboard route is retired).
+    revalidatePath("/services");
     return { ok: "Brew quantities saved." };
   } catch (err) {
     if (err instanceof BrewValidationError) return { error: err.message };

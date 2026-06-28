@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
+import { getBrewQuantitiesByService } from "@/modules/services/brew";
 import { listSchedule, listServices, type Service } from "@/modules/services/service";
 import { AdHocForm, RemoveScheduleForm, ScheduleForm } from "./service-forms";
 
@@ -69,6 +70,10 @@ export default async function ServicesPage() {
   const todays = upcoming.filter((s) => s.date === t);
   const laterUpcoming = upcoming.filter((s) => s.date > t);
 
+  // Services is now the post-login home, so it absorbs the retired Dashboard's
+  // "Today's coffee" view — today's gatherings with their brew quantities.
+  const quantities = await getBrewQuantitiesByService(todays.map((s) => s.id));
+
   return (
     <section className="mx-auto max-w-2xl space-y-8">
       <div>
@@ -78,10 +83,48 @@ export default async function ServicesPage() {
         </p>
       </div>
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-medium">Today</h2>
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Today&rsquo;s coffee</h2>
         {todays.length > 0 ? (
-          <ServiceList services={todays} />
+          <ul className="space-y-3">
+            {todays.map((s) => {
+              const q = quantities.get(s.id);
+              return (
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-neutral-200 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <Link
+                      href={`/services/${s.id}`}
+                      className="font-medium underline-offset-2 hover:underline"
+                    >
+                      {s.name}
+                      {s.kind === "ad_hoc" && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                          Special
+                        </span>
+                      )}
+                    </Link>
+                    <span className="text-sm text-neutral-500">
+                      {formatTime(s.time)}
+                    </span>
+                  </div>
+                  {q ? (
+                    <p className="mt-2 text-sm">
+                      Brew <strong>{q.regularPots}</strong> regular ·{" "}
+                      <strong>{q.decafPots}</strong> decaf (pots)
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-neutral-400">
+                      No brew quantities set
+                      {lead ? " — set them on the Service." : " yet."}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         ) : (
           <p className="text-sm text-neutral-400">No services today.</p>
         )}
