@@ -30,7 +30,10 @@ export function MobileNav({
     "flex min-w-16 flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-[10px] font-medium";
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-white px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden">
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-white px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+    >
       {PRIMARY_TABS.map((d) => {
         const Icon = d.icon;
         const active = isActiveHref(pathname, d.href);

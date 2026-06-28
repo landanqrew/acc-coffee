@@ -28,7 +28,10 @@ export function DesktopRail({
     "ml-3 truncate opacity-0 transition-opacity duration-200 group-hover:opacity-100";
 
   return (
-    <aside className="group sticky top-0 hidden h-svh w-16 flex-none flex-col overflow-hidden border-r border-border bg-white py-4 transition-[width] duration-200 hover:w-60 md:flex">
+    <aside
+      aria-label="Sidebar"
+      className="group sticky top-0 hidden h-svh w-16 flex-none flex-col overflow-hidden border-r border-border bg-white py-4 transition-[width] duration-200 hover:w-60 md:flex"
+    >
       <div className="flex items-center px-3 pb-4">
         <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent text-sm font-bold text-accent-foreground">
           AC
@@ -38,7 +41,7 @@ export function DesktopRail({
         </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 px-3">
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
         {destinations.map((d) => {
           const Icon = d.icon;
           const active = isActiveHref(pathname, d.href);
