@@ -42,7 +42,7 @@
     } },
   };
 </script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/lucide@1.22.0/dist/umd/lucide.min.js"></script>
 
 <style>
   html { scroll-behavior:smooth; }
@@ -440,10 +440,12 @@
     </div>
 
     <div class="mt-4 rounded-2xl bg-[#0f172a] p-5 text-slate-200 shadow-lift">
-      <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Drop-in token block for <span class="font-mono">src/app/globals.css</span> (retune the accent for coffee)</div>
+      <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Token block to <b>merge into</b> <span class="font-mono">src/app/globals.css</span> — additive, keep the existing <span class="font-mono">--color-background</span> / <span class="font-mono">--font-*</span> aliases (retune the accent for coffee)</div>
 <pre class="overflow-auto font-mono text-[12px] leading-relaxed"><span class="text-slate-500">@theme inline {</span>
+  <span class="text-slate-500">/* keep the current contract */</span>
+  --color-background:#ffffff;  --font-sans:var(--font-dm-sans);  --font-mono:var(--font-jetbrains-mono);
   --color-canvas:#fbfcfd;  --color-app:#eef1f4;
-  --color-muted:#f6f8fa;   --color-muted-foreground:#64748b;  --color-subtle:#94a3b8;
+  --color-muted:#f5f6f8;   --color-muted-foreground:#5b6472;  --color-subtle:#9aa1ad;
   --color-border:#e6e8ec;  --color-input:#e6e8ec;  --color-ring:#2f6bff;
   --color-foreground:#111418;   <span class="text-slate-500">/* near-black ink */</span>
   --color-primary:#2f6bff; --color-primary-foreground:#ffffff;   <span class="text-slate-500">/* church royal blue */</span>
