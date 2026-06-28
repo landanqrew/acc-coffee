@@ -102,6 +102,11 @@ export function StockCard({
   );
 }
 
+/**
+ * The body of the Stock-Count sheet: a single mono count Field wired to the
+ * existing `recordCountAction`. Pre-fills the current level so a small
+ * correction is one keystroke, and closes the sheet once the count is saved.
+ */
 function CountSheetForm({
   supplyId,
   currentCount,
