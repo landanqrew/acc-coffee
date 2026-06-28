@@ -24,13 +24,15 @@ export function DesktopRail({
   const pathname = usePathname();
   const destinations = railDestinations(lead);
 
+  // Reveal labels on hover *and* keyboard focus, so tabbing through the rail
+  // isn't a blind walk for keyboard users.
   const label =
-    "ml-3 truncate opacity-0 transition-opacity duration-200 group-hover:opacity-100";
+    "ml-3 truncate opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100";
 
   return (
     <aside
       aria-label="Sidebar"
-      className="group sticky top-0 hidden h-svh w-16 flex-none flex-col overflow-hidden border-r border-border bg-white py-4 transition-[width] duration-200 hover:w-60 md:flex"
+      className="group sticky top-0 hidden h-svh w-16 flex-none flex-col overflow-hidden border-r border-border bg-white py-4 transition-[width] duration-200 hover:w-60 focus-within:w-60 md:flex"
     >
       <div className="flex items-center px-3 pb-4">
         <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent text-sm font-bold text-accent-foreground">

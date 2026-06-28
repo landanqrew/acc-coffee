@@ -44,6 +44,7 @@ export const PRIMARY_TABS: readonly NavDestination[] = DESTINATIONS.filter(
   (d) => d.primaryTab,
 );
 
+/** Destinations a given role may see — lead-only entries drop out for Volunteers. */
 function visibleFor(lead: boolean): NavDestination[] {
   return DESTINATIONS.filter((d) => lead || !d.leadOnly);
 }
