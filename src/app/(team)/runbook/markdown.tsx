@@ -30,18 +30,18 @@ const components: Components = {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="text-neutral-900 underline underline-offset-2"
+      className="text-brand-deep underline underline-offset-2"
     >
       {children}
     </a>
   ),
   code: ({ children }) => (
-    <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.85em]">
+    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]">
       {children}
     </code>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-neutral-300 pl-3 text-neutral-600">
+    <blockquote className="border-l-2 border-border pl-3 text-muted-foreground">
       {children}
     </blockquote>
   ),
@@ -49,7 +49,7 @@ const components: Components = {
 
 export function Markdown({ children }: { children: string }) {
   return (
-    <div className="space-y-3 text-sm text-neutral-800">
+    <div className="space-y-3 text-sm text-foreground">
       <ReactMarkdown components={components}>{children}</ReactMarkdown>
     </div>
   );
