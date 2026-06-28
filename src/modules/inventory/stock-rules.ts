@@ -67,6 +67,24 @@ export type StockLevel = {
   isLow: boolean;
 };
 
+/** A Supply's at-a-glance stock state, or null when it has never been counted. */
+export type StockStatus = "ok" | "low" | "out";
+
+/**
+ * Reduces a stock level to a single display status. Out beats low: nothing on
+ * hand is "out" regardless of whether a minimum is set. At/below a minimum
+ * (with some still on hand) is "low"; anything else is "ok". An uncounted
+ * Supply has no status (null) — there is nothing to colour yet.
+ */
+export function stockStatus(
+  level: Pick<StockLevel, "currentCount" | "isLow">,
+): StockStatus | null {
+  if (level.currentCount === null) return null;
+  if (level.currentCount === 0) return "out";
+  if (level.isLow) return "low";
+  return "ok";
+}
+
 /**
  * Builds the current stock level for each Supply from its observed counts —
  * last-count-wins resolution plus low-stock detection, in one pure pass.

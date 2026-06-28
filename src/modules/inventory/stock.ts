@@ -13,8 +13,8 @@ import {
 } from "./stock-rules";
 import { decideRestockAlert, type RestockAlert } from "./restock-rules";
 
-export type { StockCount, StockLevel } from "./stock-rules";
-export { StockCountValidationError } from "./stock-rules";
+export type { StockCount, StockLevel, StockStatus } from "./stock-rules";
+export { StockCountValidationError, stockStatus } from "./stock-rules";
 
 export type RecordStockCountInput = {
   supplyId: string;

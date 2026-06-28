@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/dal";
-import { getStockLevels } from "@/modules/inventory/stock";
-import { CountForm } from "./count-form";
+import { getStockLevels, stockStatus } from "@/modules/inventory/stock";
+import { StockCard } from "./stock-card";
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -12,62 +12,35 @@ export default async function StockPage() {
   const levels = await getStockLevels();
 
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
+    <section className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Stock</h1>
-        <p className="text-sm text-neutral-500">
-          Current level of every supply — the latest count wins. Record a new
-          count any time (e.g. after a supply run).
+        <p className="text-sm text-muted-foreground">
+          Current level of every supply — the latest count wins. Tap a supply to
+          record a new count any time (e.g. after a supply run).
         </p>
       </div>
 
       {levels.length === 0 ? (
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-subtle">
           No active supplies yet. A Lead can add them on the Supplies page.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {levels.map(({ supply, currentCount, lastCountedAt, isLow }) => (
-            <li
-              key={supply.id}
-              className={`rounded-lg border p-4 ${
-                isLow ? "border-red-300 bg-red-50" : "border-neutral-200"
-              }`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{supply.name}</span>
-                    {isLow && (
-                      <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
-                        Low
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-neutral-600">
-                    {currentCount != null ? (
-                      <>
-                        On hand: <strong>{currentCount}</strong>
-                        {supply.minimumLevel != null && (
-                          <span className="text-neutral-400">
-                            {" "}
-                            · min {supply.minimumLevel}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-neutral-400">Not counted yet</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-neutral-400">
-                    {lastCountedAt
-                      ? `Last counted ${dateFormat.format(lastCountedAt)}`
-                      : "No counts on record"}
-                  </p>
-                </div>
-
-                <CountForm supplyId={supply.id} />
-              </div>
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {levels.map((level) => (
+            <li key={level.supply.id}>
+              <StockCard
+                supplyId={level.supply.id}
+                name={level.supply.name}
+                currentCount={level.currentCount}
+                minimumLevel={level.supply.minimumLevel}
+                status={stockStatus(level)}
+                lastCountedLabel={
+                  level.lastCountedAt
+                    ? `Last counted ${dateFormat.format(level.lastCountedAt)}`
+                    : "No counts on record"
+                }
+              />
             </li>
           ))}
         </ul>

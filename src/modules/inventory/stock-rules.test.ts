@@ -4,6 +4,7 @@ import {
   buildStockLevels,
   isLow,
   latestCount,
+  stockStatus,
   StockCountValidationError,
   validateStockCount,
   type StockCount,
@@ -108,5 +109,24 @@ describe("buildStockLevels", () => {
     expect(level.currentCount).toBeNull();
     expect(level.lastCountedAt).toBeNull();
     expect(level.isLow).toBe(false);
+  });
+});
+
+describe("stockStatus", () => {
+  it("is null for a Supply that has never been counted", () => {
+    expect(stockStatus({ currentCount: null, isLow: false })).toBeNull();
+  });
+
+  it("is out whenever nothing is on hand, even with no minimum set", () => {
+    expect(stockStatus({ currentCount: 0, isLow: false })).toBe("out");
+    expect(stockStatus({ currentCount: 0, isLow: true })).toBe("out");
+  });
+
+  it("is low when at/below minimum but still has some on hand", () => {
+    expect(stockStatus({ currentCount: 8, isLow: true })).toBe("low");
+  });
+
+  it("is ok when above minimum", () => {
+    expect(stockStatus({ currentCount: 50, isLow: false })).toBe("ok");
   });
 });
