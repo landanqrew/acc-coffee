@@ -1,15 +1,90 @@
 @import "tailwindcss";
 
+/*
+ * Church royal-blue token contract.
+ * Raw values live in :root; @theme inline maps them onto the semantic tokens
+ * Tailwind and shadcn/ui compose from. Light-only — no dark block.
+ */
 :root {
+  /* keep the existing contract */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111418; /* near-black ink */
+
+  /* surfaces */
+  --canvas: #fbfcfd;
+  --app: #eef1f4;
+  --muted: #f5f6f8;
+  --muted-foreground: #5b6472;
+  --subtle: #9aa1ad;
+  --border: #e6e8ec;
+  --input: #e6e8ec;
+  --ring: #2f6bff;
+
+  /* brand — church royal blue */
+  --primary: #2f6bff;
+  --primary-foreground: #ffffff;
+  --brand-deep: #1d4ed8; /* AA text + links on white */
+  --accent: #eef3ff;
+  --accent-foreground: #1d4ed8;
+
+  /* status — fg / bg / bd trios */
+  --ok: #15803d;
+  --ok-bg: #ecfdf3;
+  --ok-bd: #a7f0c0;
+  --warn: #b54708;
+  --warn-bg: #fffaeb;
+  --warn-bd: #fedf89;
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
+  --danger-bd: #fecdca;
 }
 
 @theme inline {
+  /* keep the current contract */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* surfaces */
+  --color-canvas: var(--canvas);
+  --color-app: var(--app);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* brand */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand-deep: var(--brand-deep);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* status */
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-bd: var(--ok-bd);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-bd: var(--warn-bd);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-bd: var(--danger-bd);
+
+  /* radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+
+  /* shadows */
+  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-lift: 0 6px 18px rgba(16, 24, 40, 0.1), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --shadow-panel: -12px 0 36px rgba(16, 24, 40, 0.14);
 }
 
 body {
