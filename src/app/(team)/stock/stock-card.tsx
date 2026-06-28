@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -45,6 +45,9 @@ export function StockCard({
 }: StockCardProps) {
   const [open, setOpen] = useState(false);
   const meta = status ? STATUS_META[status] : null;
+  // Stable across renders so CountSheetForm's effect doesn't re-fire when the
+  // server revalidation re-renders this card while the sheet is still open.
+  const closeSheet = useCallback(() => setOpen(false), []);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -92,7 +95,7 @@ export function StockCard({
         <CountSheetForm
           supplyId={supplyId}
           currentCount={currentCount}
-          onSaved={() => setOpen(false)}
+          onSaved={closeSheet}
         />
       </SheetContent>
     </Sheet>
