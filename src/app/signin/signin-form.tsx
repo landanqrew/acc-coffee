@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Button, Field } from "@/components/ui";
 import { signInAction } from "./actions";
 
 // Auth.js redirects here with ?error=<code> when a sign-in attempt fails.
@@ -24,37 +25,28 @@ export function SignInForm() {
 
   return (
     <form action={action} className="space-y-4">
-      <div className="space-y-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          autoCapitalize="none"
-          autoCorrect="off"
-          required
-          placeholder="you@church.org"
-          className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base outline-none focus:border-neutral-900"
-        />
-      </div>
+      <Field
+        id="email"
+        name="email"
+        label="Email"
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        required
+        placeholder="you@church.org"
+      />
 
       {errorMessage && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {errorMessage}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Sending link…" : "Email me a sign-in link"}
-      </button>
+      </Button>
     </form>
   );
 }
