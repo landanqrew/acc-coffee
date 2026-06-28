@@ -23,6 +23,12 @@ describe("buttonVariants", () => {
     expect(cls).toContain("hover:underline");
   });
 
+  it("strips pill sizing from the link variant (pure inline text link)", () => {
+    const cls = buttonVariants({ variant: "link" });
+    expect(cls).not.toContain("min-h-11");
+    expect(cls).not.toContain("px-4");
+  });
+
   it("renders a ghost variant with no fill", () => {
     const cls = buttonVariants({ variant: "ghost" });
     expect(cls).toContain("hover:bg-muted");

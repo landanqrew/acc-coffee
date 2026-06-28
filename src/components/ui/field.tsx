@@ -67,7 +67,11 @@ export const Field = React.forwardRef<HTMLInputElement, FieldProps>(
           {...props}
         />
         {error ? (
-          <p id={`${inputId}-error`} className="mt-1 text-xs text-danger">
+          <p
+            id={`${inputId}-error`}
+            role="alert"
+            className="mt-1 text-xs text-danger"
+          >
             {error}
           </p>
         ) : help ? (

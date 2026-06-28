@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * fill that deepens to brand-deep on hover; the shadow lifts soft → lift.
  * Default and icon sizes keep a >=44px tap target for mobile.
  */
-export const buttonVariants = cva(
+const buttonVariantsConfig = cva(
   "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-shadow transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
@@ -25,6 +25,11 @@ export const buttonVariants = cva(
         icon: "h-11 w-11 p-0",
       },
     },
+    compoundVariants: [
+      // A link is a pure inline text link (study §Components) — strip the
+      // pill sizing the default size would otherwise inject.
+      { variant: "link", class: "min-h-0 px-0 py-0" },
+    ],
     defaultVariants: {
       variant: "primary",
       size: "default",
@@ -32,9 +37,19 @@ export const buttonVariants = cva(
   },
 );
 
+/**
+ * Resolve button classes, merging conflicting Tailwind utilities so the
+ * link variant's compound override actually wins over the size padding.
+ */
+export function buttonVariants(
+  props?: Parameters<typeof buttonVariantsConfig>[0],
+) {
+  return cn(buttonVariantsConfig(props));
+}
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+    VariantProps<typeof buttonVariantsConfig> {}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   function Button({ className, variant, size, type = "button", ...props }, ref) {
