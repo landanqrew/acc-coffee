@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>acc-coffee · UI study — deductions from sample-manager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Same type system sample-manager locked: DM Sans for language, JetBrains Mono for data -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Tokens lifted verbatim from sample-manager's globals.css / app-mockup.html
+  // so this document renders in the real design language, not an approximation.
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        background:'#ffffff', foreground:'#111418',
+        canvas:'#fbfcfd', app:'#eef1f4',
+        muted:'#f5f6f8', 'muted-foreground':'#5b6472', subtle:'#9aa1ad',
+        border:'#e6e8ec', input:'#e6e8ec', ring:'#2f6bff',
+        primary:'#2f6bff', 'primary-foreground':'#ffffff',
+        secondary:'#f5f6f8',
+        accent:'#eef3ff', 'accent-foreground':'#1d4ed8',
+        destructive:'#b42318',
+        // brand.cyan kept as the token name for porting parity, but valued to the
+        // church royal blue. deep = AA-on-white text; bright = fills.
+        brand:{ cyan:'#2f6bff', bright:'#5b8bff', deep:'#1d4ed8', yellow:'#cfe60a' },
+        ok:'#15803d','ok-bg':'#ecfdf3','ok-bd':'#a7f0c0',
+        warn:'#b54708','warn-bg':'#fffaeb','warn-bd':'#fedf89',
+        danger:'#b42318','danger-bg':'#fef3f2','danger-bd':'#fecdca',
+      },
+      fontFamily:{ sans:['"DM Sans"','ui-sans-serif','system-ui','sans-serif'], mono:['"JetBrains Mono"','ui-monospace','monospace'] },
+      borderRadius:{ sm:'6px', md:'8px', lg:'10px', xl:'14px', '2xl':'16px' },
+      boxShadow:{
+        soft:'0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.04)',
+        lift:'0 6px 18px rgba(16,24,40,.10), 0 2px 6px rgba(16,24,40,.05)',
+        panel:'-12px 0 36px rgba(16,24,40,.14)',
+      },
+    } },
+  };
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  html { scroll-behavior:smooth; }
+  body { background:#eef1f4; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:#cdd5dd; border-radius:8px; border:2px solid #eef1f4; }
+  /* phone frame for the mobile-adaptation demos */
+  .phone { width:390px; max-width:100%; border:10px solid #0f172a; border-radius:38px; overflow:hidden; box-shadow:0 18px 50px rgba(16,24,40,.28); }
+  .phone-screen { height:720px; overflow:auto; background:#eef1f4; }
+  .anchor { scroll-margin-top:84px; }
+  code.tok { font-family:"JetBrains Mono",monospace; font-size:12px; background:#f6f8fa; border:1px solid #e6eaee; border-radius:6px; padding:1px 6px; }
+</style>
+</head>
+<body class="font-sans text-foreground antialiased">
+
+<!-- ============ sticky doc header ============ -->
+<header class="sticky top-0 z-40 border-b border-border bg-white/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center gap-3 px-5 py-3">
+    <span class="grid h-9 w-9 flex-none place-items-center rounded-xl bg-brand-cyan text-white shadow-soft"><i data-lucide="coffee" class="h-5 w-5"></i></span>
+    <div class="leading-tight">
+      <div class="text-sm font-bold">acc-coffee · UI Study</div>
+      <div class="text-[11px] text-muted-foreground">Deductions from <span class="font-mono">sample-manager</span> · for review, not committed design</div>
+    </div>
+    <nav class="ml-auto hidden gap-1 text-xs font-medium text-muted-foreground md:flex">
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#dna">DNA</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#color">Color</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#type">Type</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#shape">Shape</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#components">Components</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#nav">Nav model</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#mobile">Mobile</a>
+      <a class="rounded-full px-3 py-1.5 hover:bg-muted" href="#port">Porting</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-5 py-8">
+
+  <!-- ============ intro ============ -->
+  <section class="mb-10">
+    <span class="inline-flex items-center gap-1.5 rounded-full border border-accent-foreground/20 bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"><i data-lucide="search" class="h-3.5 w-3.5"></i> Research summary</span>
+    <h1 class="mt-3 text-3xl font-extrabold tracking-tight">What gives <span class="font-mono text-brand-deep">sample-manager</span> its look</h1>
+    <p class="mt-3 max-w-3xl text-[15px] leading-relaxed text-muted-foreground">
+      sample-manager has a fully documented, <b class="text-foreground">locked</b> design language (its <code class="tok">docs/design/design-philosophy.md</code> + a reference mockup). Below is everything I extracted — the philosophy, the exact tokens, the component grammar, and the navigation rules — rendered <b class="text-foreground">in that language</b> so you can see it, not just read it. Each section ends with a note on what it means for acc-coffee, which is <b class="text-foreground">mobile-first</b> where sample-manager is desktop-first. We'll turn this into a concrete re-skin plan.
+    </p>
+
+    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-2xl bg-white p-4 shadow-lift">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">North star</div>
+        <div class="mt-1 font-bold">Friendly utilitarian</div>
+        <p class="mt-1 text-sm text-muted-foreground">Approachable, not sterile. Fast where the work happens.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-4 shadow-lift">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">The one big idea</div>
+        <div class="mt-1 font-bold">Warm frame, crisp core</div>
+        <p class="mt-1 text-sm text-muted-foreground">Soft lifted shell wrapping tight, flat data regions.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-4 shadow-lift">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Expression</div>
+        <div class="mt-1 font-bold">"Elevated"</div>
+        <p class="mt-1 text-sm text-muted-foreground">16px floating cards · pill buttons · lift shadows on cool-gray.</p>
+      </div>
+    </div>
+
+    <div class="mt-4 rounded-xl border border-warn-bd bg-warn-bg px-4 py-3 text-sm text-warn">
+      <b>Stack match is in our favor.</b> Both apps are Next.js + React 19 + Tailwind v4. sample-manager adds shadcn/ui (new-york, neutral base) + lucide icons + <code class="tok">class-variance-authority</code>/<code class="tok">tailwind-merge</code>. acc-coffee currently ships the default Geist/neutral theme and no component library — so adopting this language is mostly a token re-theme + a small set of shared primitives, not a rewrite.
+    </div>
+  </section>
+
+  <!-- ============ DNA ============ -->
+  <section id="dna" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="dna" class="h-4 w-4"></i></span> The design DNA</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">Five principles do all the work. They're worth internalizing because they're <i>rules</i>, not vibes — each one tells you what to do at a decision point.</p>
+
+    <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 font-bold">1 · Separate shell from data</div>
+        <p class="text-sm text-muted-foreground">The friendly-vs-dense tension is resolved by zoning. The <b class="text-foreground">shell</b> (headers, cards, nav) is roomy, soft, accented. The <b class="text-foreground">data core</b> (tables, grids) is tight, hairline, flat. Keep the seam between them clean.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 font-bold">2 · Depth, not borders, separates the shell</div>
+        <p class="text-sm text-muted-foreground">White cards <b class="text-foreground">float</b> on a cool-gray app background via lift shadows — they don't sit in outlined boxes. Borders are reserved for hairline dividers <i>inside</i> dense regions.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 font-bold">3 · Color carries meaning, not decoration</div>
+        <p class="text-sm text-muted-foreground">Royal blue = interactive (links, active nav, primary buttons). Status green/amber/red = state only. No decorative color beyond the accent — neutral surfaces keep status legible.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 font-bold">4 · Type split is the type system</div>
+        <p class="text-sm text-muted-foreground">Sans (DM Sans) for language; mono (JetBrains Mono) for data — IDs, prices, codes. Numbers and identifiers always go mono so columns align and scan.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft md:col-span-2">
+        <div class="mb-1 font-bold">5 · Edit-depth picks the surface</div>
+        <p class="text-sm text-muted-foreground">A record's own properties (direct object) → <b class="text-foreground">side-pane overlay</b>. Drilling into a child record → <b class="text-foreground">full page</b>. The surface is chosen by relationship depth, not by how big the record is.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COLOR ============ -->
+  <section id="color" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="palette" class="h-4 w-4"></i></span> Color system</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">We keep sample-manager's <i>structure</i> (one interactive accent over cool-white surfaces, status fenced off for meaning) but set the accent to the <b class="text-foreground">church's royal blue</b> — the <span class="font-mono">LEARN MORE</span> button / "Click here." link blue, over near-black ink and white. Swatches below are the tuned values.</p>
+
+    <div class="mt-4 rounded-2xl bg-white p-5 shadow-lift">
+      <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Brand &amp; interactive</div>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" id="sw-brand"></div>
+
+      <div class="mb-2 mt-6 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Surfaces &amp; ink</div>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" id="sw-surface"></div>
+
+      <div class="mb-2 mt-6 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status — reserved for meaning</div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3" id="sw-status"></div>
+    </div>
+
+    <div class="mt-3 rounded-xl border border-accent-foreground/20 bg-accent px-4 py-3 text-sm text-accent-foreground">
+      <b>For acc-coffee (decided):</b> the accent is the <b>church royal blue</b> (<span class="font-mono">#2f6bff</span>), with a deeper <span class="font-mono">#1d4ed8</span> for small text/links so it clears AA on white. Surfaces stay cool-white, ink near-black (<span class="font-mono">#111418</span>), and the green/amber/red status trio is unchanged. This keeps the app visually tied to the church's site while inheriting sample-manager's whole "Elevated" grammar.
+    </div>
+  </section>
+
+  <!-- ============ TYPE ============ -->
+  <section id="type" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="type" class="h-4 w-4"></i></span> Typography</h2>
+    <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">DM Sans — language</div>
+        <div class="mt-2 text-3xl font-extrabold tracking-tight">Brew log, ready.</div>
+        <div class="mt-1 text-base">The quick brown fox jumps over the lazy dog.</div>
+        <div class="mt-1 text-sm text-muted-foreground">Headings, labels, body, navigation. Weights 400–800.</div>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">JetBrains Mono — data</div>
+        <div class="mt-2 font-mono text-3xl font-semibold tracking-tight">26-06-014</div>
+        <div class="mt-1 font-mono text-base">$1,240.00 · DPCR · 3.5 lb</div>
+        <div class="mt-1 text-sm text-muted-foreground">IDs, prices, codes, quantities — anything that scans in a column.</div>
+      </div>
+    </div>
+    <div class="mt-3 rounded-xl border border-accent-foreground/20 bg-accent px-4 py-3 text-sm text-accent-foreground">
+      <b>For acc-coffee:</b> the sans/mono split maps cleanly onto our domain — mono for stock counts, brew quantities (e.g. <span class="font-mono">3.5&nbsp;lb</span>), dates, and service IDs. DM Sans is a strong, free pairing; if we want more "coffee warmth" we could audition a slightly more characterful display sans for big headings only, keeping DM Sans for body.
+    </div>
+  </section>
+
+  <!-- ============ SHAPE & ELEVATION ============ -->
+  <section id="shape" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="layers" class="h-4 w-4"></i></span> Shape &amp; elevation</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">The "Elevated" physical expression: generous radii + pills + a 3-step shadow scale signal "shell"; hairlines + tight rows signal "data."</p>
+
+    <div class="mt-4 grid gap-3 lg:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Radius scale</div>
+        <div class="flex flex-wrap items-end gap-4">
+          <div class="text-center"><div class="h-16 w-16 rounded-sm border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">sm 6</div></div>
+          <div class="text-center"><div class="h-16 w-16 rounded-md border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">md 8</div></div>
+          <div class="text-center"><div class="h-16 w-16 rounded-lg border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">lg 10</div></div>
+          <div class="text-center"><div class="h-16 w-16 rounded-xl border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">xl 14</div></div>
+          <div class="text-center"><div class="h-16 w-16 rounded-2xl border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">2xl 16</div></div>
+          <div class="text-center"><div class="h-16 w-16 rounded-full border border-border bg-muted"></div><div class="mt-1 font-mono text-[11px]">pill</div></div>
+        </div>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Shadow scale</div>
+        <div class="flex flex-wrap items-center gap-6">
+          <div class="text-center"><div class="grid h-20 w-28 place-items-center rounded-xl bg-white shadow-soft text-xs text-muted-foreground">soft</div><div class="mt-2 text-[11px] text-muted-foreground">cards, chips</div></div>
+          <div class="text-center"><div class="grid h-20 w-28 place-items-center rounded-xl bg-white shadow-lift text-xs text-muted-foreground">lift</div><div class="mt-2 text-[11px] text-muted-foreground">floating panels, CTAs</div></div>
+          <div class="text-center"><div class="grid h-20 w-28 place-items-center rounded-xl bg-white shadow-panel text-xs text-muted-foreground">panel</div><div class="mt-2 text-[11px] text-muted-foreground">side-pane overlay</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 rounded-2xl bg-white p-5 shadow-lift">
+      <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">The seam — a lifted card holding a flat, tight table</div>
+      <div class="overflow-hidden rounded-2xl bg-white shadow-lift">
+        <table class="w-full border-collapse text-sm">
+          <thead><tr class="border-b border-border bg-white text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <th class="px-3 py-2.5">Item</th><th class="px-3 py-2.5 text-right">On hand</th><th class="px-3 py-2.5 text-right">Par</th><th class="px-3 py-2.5">Status</th>
+          </tr></thead>
+          <tbody class="divide-y divide-border">
+            <tr class="hover:bg-accent/40"><td class="px-3 py-1.5">House blend (whole)</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">3.5 lb</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">5 lb</td><td class="px-3 py-1.5"><span class="inline-flex items-center rounded-full border border-warn-bd bg-warn-bg px-2 py-0.5 text-[11px] font-medium text-warn">Low</span></td></tr>
+            <tr class="hover:bg-accent/40"><td class="px-3 py-1.5">Decaf (whole)</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">6 lb</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">4 lb</td><td class="px-3 py-1.5"><span class="inline-flex items-center rounded-full border border-ok-bd bg-ok-bg px-2 py-0.5 text-[11px] font-medium text-ok">OK</span></td></tr>
+            <tr class="hover:bg-accent/40"><td class="px-3 py-1.5">Oat milk</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">0</td><td class="px-3 py-1.5 text-right font-mono text-[13px]">8</td><td class="px-3 py-1.5"><span class="inline-flex items-center rounded-full border border-danger-bd bg-danger-bg px-2 py-0.5 text-[11px] font-medium text-danger">Out</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-2 text-[11px] text-muted-foreground">Card = 16px radius + lift shadow (shell). Rows = <code class="tok">py-1.5</code>, hairline dividers, mono numbers (data). This single composition is the whole philosophy in one screen.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENTS ============ -->
+  <section id="components" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="component" class="h-4 w-4"></i></span> Component grammar</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">The recurring building blocks, lifted from the real components (<code class="tok">jobs-table.tsx</code>, <code class="tok">app-rail.tsx</code>, <code class="tok">top-bar.tsx</code>, <code class="tok">customers-screen.tsx</code>).</p>
+
+    <div class="mt-4 grid gap-3 lg:grid-cols-2">
+      <!-- buttons -->
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Buttons — pill, full radius</div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-white shadow-lift hover:bg-brand-deep"><i data-lucide="plus" class="h-4 w-4"></i> Primary</button>
+          <button class="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-medium shadow-soft hover:shadow-lift">Secondary</button>
+          <button class="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium text-brand-deep shadow-soft hover:shadow-lift"><i data-lucide="external-link" class="h-3.5 w-3.5"></i> Link-style</button>
+          <button class="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"><i data-lucide="bell" class="h-5 w-5"></i></button>
+        </div>
+        <div class="mt-3 flex items-center gap-2"><button class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-deep hover:underline">Click here <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i></button><span class="text-[11px] text-muted-foreground">deep-blue text link (AA on white), mirroring the church site</span></div>
+      </div>
+
+      <!-- segmented + status -->
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Segmented control &amp; status pills</div>
+        <div class="inline-flex gap-0.5 rounded-full border border-border bg-white p-1 shadow-soft text-sm">
+          <button class="rounded-full bg-primary px-3 py-1 font-medium text-white">Active</button>
+          <button class="rounded-full px-3 py-1 text-muted-foreground hover:bg-muted">Draft</button>
+          <button class="rounded-full px-3 py-1 text-muted-foreground hover:bg-muted">All</button>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span class="inline-flex items-center rounded-full border border-accent-foreground/20 bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">Open</span>
+          <span class="inline-flex items-center rounded-full border border-warn-bd bg-warn-bg px-2.5 py-0.5 text-xs font-medium text-warn">Draft</span>
+          <span class="inline-flex items-center gap-1 rounded-full border border-ok-bd bg-ok-bg px-2.5 py-0.5 text-xs font-medium text-ok"><i data-lucide="circle-check" class="h-3 w-3"></i> Complete</span>
+          <span class="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">Archived</span>
+        </div>
+      </div>
+
+      <!-- inputs -->
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Inputs &amp; fields</div>
+        <label class="block"><span class="mb-1 block text-xs font-medium text-muted-foreground">Sample name</span>
+          <input class="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Pad 7 Inlet" /></label>
+        <div class="mt-3 flex h-9 w-full items-center gap-2 rounded-full border border-border bg-muted/60 px-4 text-sm text-muted-foreground">
+          <i data-lucide="search" class="h-4 w-4"></i><span>Search…</span>
+          <kbd class="ml-auto rounded-full border border-border bg-white px-2 py-0.5 font-mono text-[11px] text-subtle">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- chips -->
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data chips (mono codes)</div>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="inline-flex items-center rounded-full border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">WATER</span>
+          <span class="inline-flex items-center rounded-full border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">ATP</span>
+          <span class="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-0.5 font-mono text-[11px] text-accent-foreground">DPCR <i data-lucide="x" class="h-2.5 w-2.5"></i></span>
+          <button class="rounded-full border border-dashed border-border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-primary">+</button>
+        </div>
+        <p class="mt-3 text-[11px] text-muted-foreground">Removable chips (✕) + a dashed "add" affordance is their pattern for editable sets.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NAV MODEL ============ -->
+  <section id="nav" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="route" class="h-4 w-4"></i></span> Navigation &amp; editing model</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">This is the part most worth a conscious decision for acc-coffee, because it's the most desktop-biased.</p>
+
+    <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 flex items-center gap-2 font-bold"><i data-lucide="panel-left" class="h-4 w-4 text-brand-deep"></i> Hover-expand rail</div>
+        <p class="text-sm text-muted-foreground">Left nav is a 64px icon rail that expands to 240px labels on hover/focus — as an overlay, with no content reflow. Active item gets a 3px cyan bar + accent tint.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 flex items-center gap-2 font-bold"><i data-lucide="square-menu" class="h-4 w-4 text-brand-deep"></i> Breadcrumb + ⌘K top bar</div>
+        <p class="text-sm text-muted-foreground">A 56px top bar carries breadcrumbs (tracking edit depth), a global ⌘K search affordance, and a QBO sync status chip.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 flex items-center gap-2 font-bold"><i data-lucide="panel-right" class="h-4 w-4 text-brand-deep"></i> Side-pane for direct objects</div>
+        <p class="text-sm text-muted-foreground">Editing a row's own props (or "New X") opens a right side-pane overlay (≤440px, <code class="tok">panel</code> shadow, dimmed backdrop) — the list stays in context.</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-1 flex items-center gap-2 font-bold"><i data-lucide="rows-3" class="h-4 w-4 text-brand-deep"></i> Full page for child records · infinite scroll</div>
+        <p class="text-sm text-muted-foreground">Drilling into a child (job → samples) is full-page navigation. Lists use infinite scroll, never pagination, with a sentinel row.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MOBILE ============ -->
+  <section id="mobile" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="smartphone" class="h-4 w-4"></i></span> Mobile responsiveness — the honest assessment</h2>
+
+    <div class="mt-3 rounded-xl border border-warn-bd bg-warn-bg px-4 py-3 text-sm text-warn">
+      <b>Key finding:</b> sample-manager is built <b>desktop-first</b>. Its components carry almost <b>no responsive breakpoints</b> — fixed-width rail (<code class="tok">w-16</code>→<code class="tok">w-60</code>), a 320px search box, a <code class="tok">w-80</code> drawer, wide multi-column tables, and a <code class="tok">h-svh</code> non-scrolling shell. It looks the way it does <i>at desktop width</i>. So we inherit its <b>visual language</b>, but we must design the <b>responsive behavior ourselves</b> — acc-coffee is mobile-first.
+    </div>
+
+    <p class="mt-4 max-w-3xl text-sm text-muted-foreground">The good news: the <i>aesthetic</i> (tokens, type split, pills, lifted cards, status colors) is fully portable to mobile. Only the <b>navigation shell</b> and <b>dense tables</b> need a mobile rethink. Here's the proposed translation, rendered in a phone frame:</p>
+
+    <div class="mt-5 flex flex-wrap justify-center gap-8">
+      <!-- phone 1: shell + card-list -->
+      <div>
+        <div class="mb-2 text-center text-xs font-semibold text-muted-foreground">Rail → bottom tab bar · table → card list</div>
+        <div class="phone">
+          <div class="phone-screen flex flex-col">
+            <!-- mobile top bar -->
+            <header class="flex flex-none items-center gap-2 border-b border-border bg-white px-4 py-3">
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-brand-cyan text-white shadow-soft"><i data-lucide="coffee" class="h-4 w-4"></i></span>
+              <span class="text-sm font-bold">Stock</span>
+              <button class="ml-auto grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"><i data-lucide="search" class="h-5 w-5"></i></button>
+            </header>
+            <!-- scrollable content: cards, not a wide table -->
+            <div class="min-h-0 flex-1 space-y-2.5 overflow-auto bg-canvas p-4">
+              <div class="flex items-end justify-between">
+                <div><h1 class="text-xl font-extrabold tracking-tight">Stock count</h1><p class="text-xs text-muted-foreground">Sun service · 3 low</p></div>
+              </div>
+              <!-- each row becomes a tap-friendly card -->
+              <div class="rounded-2xl bg-white p-3.5 shadow-soft active:shadow-lift">
+                <div class="flex items-center justify-between"><div class="font-medium">House blend</div><span class="inline-flex items-center rounded-full border border-warn-bd bg-warn-bg px-2 py-0.5 text-[11px] font-medium text-warn">Low</span></div>
+                <div class="mt-1 flex items-center gap-3 text-sm text-muted-foreground"><span class="font-mono text-[13px] text-foreground">3.5 lb</span><span class="text-subtle">/ par 5 lb</span></div>
+              </div>
+              <div class="rounded-2xl bg-white p-3.5 shadow-soft active:shadow-lift">
+                <div class="flex items-center justify-between"><div class="font-medium">Oat milk</div><span class="inline-flex items-center rounded-full border border-danger-bd bg-danger-bg px-2 py-0.5 text-[11px] font-medium text-danger">Out</span></div>
+                <div class="mt-1 flex items-center gap-3 text-sm text-muted-foreground"><span class="font-mono text-[13px] text-foreground">0</span><span class="text-subtle">/ par 8</span></div>
+              </div>
+              <div class="rounded-2xl bg-white p-3.5 shadow-soft active:shadow-lift">
+                <div class="flex items-center justify-between"><div class="font-medium">Decaf</div><span class="inline-flex items-center rounded-full border border-ok-bd bg-ok-bg px-2 py-0.5 text-[11px] font-medium text-ok">OK</span></div>
+                <div class="mt-1 flex items-center gap-3 text-sm text-muted-foreground"><span class="font-mono text-[13px] text-foreground">6 lb</span><span class="text-subtle">/ par 4 lb</span></div>
+              </div>
+            </div>
+            <!-- bottom tab bar replaces the rail -->
+            <nav class="flex flex-none items-center justify-around border-t border-border bg-white px-2 py-2 pb-3">
+              <a class="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-[10px] font-medium text-accent-foreground"><span class="grid h-9 w-9 place-items-center rounded-xl bg-accent"><i data-lucide="boxes" class="h-5 w-5"></i></span>Stock</a>
+              <a class="flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium text-muted-foreground"><i data-lucide="calendar-check" class="h-5 w-5"></i>Service</a>
+              <a class="flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium text-muted-foreground"><i data-lucide="book-open" class="h-5 w-5"></i>Runbook</a>
+              <a class="flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium text-muted-foreground"><i data-lucide="message-square" class="h-5 w-5"></i>Feedback</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone 2: side-pane -> bottom sheet -->
+      <div>
+        <div class="mb-2 text-center text-xs font-semibold text-muted-foreground">Side-pane → bottom sheet · pill CTA full-width</div>
+        <div class="phone">
+          <div class="phone-screen relative flex flex-col">
+            <div class="flex-1 bg-canvas p-4 opacity-60">
+              <div class="h-8 w-32 rounded-lg bg-white shadow-soft"></div>
+              <div class="mt-3 space-y-2.5"><div class="h-16 rounded-2xl bg-white shadow-soft"></div><div class="h-16 rounded-2xl bg-white shadow-soft"></div></div>
+            </div>
+            <!-- dimmed backdrop -->
+            <div class="absolute inset-0 bg-foreground/25"></div>
+            <!-- bottom sheet -->
+            <div class="absolute inset-x-0 bottom-0 rounded-t-2xl bg-white p-5 shadow-panel">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-border"></div>
+              <div class="flex items-center"><div class="text-sm font-bold">Edit item</div><button class="ml-auto grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"><i data-lucide="x" class="h-4 w-4"></i></button></div>
+              <label class="mt-3 block"><span class="mb-1 block text-xs font-medium text-muted-foreground">On hand</span>
+                <input class="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value="3.5 lb" /></label>
+              <label class="mt-3 block"><span class="mb-1 block text-xs font-medium text-muted-foreground">Par level</span>
+                <input class="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value="5 lb" /></label>
+              <button class="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow-lift">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-2 font-bold">Mobile-first translations (proposed)</div>
+        <ul class="space-y-1.5 text-sm text-muted-foreground">
+          <li class="flex gap-2"><i data-lucide="arrow-right" class="mt-0.5 h-4 w-4 flex-none text-brand-deep"></i> Hover-expand rail → <b class="text-foreground">bottom tab bar</b> (thumb reach) on mobile; the rail returns at <code class="tok">md:</code>+.</li>
+          <li class="flex gap-2"><i data-lucide="arrow-right" class="mt-0.5 h-4 w-4 flex-none text-brand-deep"></i> Dense table → <b class="text-foreground">card list</b> on mobile; promote the table at <code class="tok">md:</code>+.</li>
+          <li class="flex gap-2"><i data-lucide="arrow-right" class="mt-0.5 h-4 w-4 flex-none text-brand-deep"></i> Right side-pane → <b class="text-foreground">bottom sheet</b> with a drag handle on mobile; right pane at <code class="tok">md:</code>+.</li>
+          <li class="flex gap-2"><i data-lucide="arrow-right" class="mt-0.5 h-4 w-4 flex-none text-brand-deep"></i> ⌘K bar → an <b class="text-foreground">icon button</b> opening a full-screen search on mobile.</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <div class="mb-2 font-bold">Mobile-first hygiene to add</div>
+        <ul class="space-y-1.5 text-sm text-muted-foreground">
+          <li class="flex gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-none text-ok"></i> Tap targets ≥ 44px; bump input padding to <code class="tok">py-2.5/3</code> and font to <code class="tok">text-base</code> (prevents iOS zoom).</li>
+          <li class="flex gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-none text-ok"></i> Respect safe-area insets (<code class="tok">env(safe-area-inset-bottom)</code>) on the tab bar / sheet.</li>
+          <li class="flex gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-none text-ok"></i> Tighten the desktop densities a touch — the data core is <i>very</i> tight for thumbs.</li>
+          <li class="flex gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-none text-ok"></i> Keep the lifted-card aesthetic — it reads beautifully on mobile already.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PORTING ============ -->
+  <section id="port" class="anchor mb-12">
+    <h2 class="flex items-center gap-2 text-xl font-extrabold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground"><i data-lucide="arrow-left-right" class="h-4 w-4"></i></span> Porting into acc-coffee</h2>
+    <p class="mt-2 max-w-3xl text-sm text-muted-foreground">Concretely, what changes. acc-coffee today ships the default Geist/neutral theme with no design tokens — so adopting this is additive.</p>
+
+    <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">acc-coffee today</div>
+        <ul class="space-y-1.5 text-sm text-muted-foreground">
+          <li>· <code class="tok">globals.css</code>: 2 tokens (bg/fg), neutral</li>
+          <li>· Fonts: Geist Sans / Geist Mono</li>
+          <li>· No shared UI primitives / no shadcn</li>
+          <li>· No elevation, pill, or status system</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-lift">
+        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target (from this study)</div>
+        <ul class="space-y-1.5 text-sm text-muted-foreground">
+          <li>· <code class="tok">@theme</code> token set: brand/surface/status/radius/shadow</li>
+          <li>· DM Sans + JetBrains Mono via <code class="tok">next/font</code></li>
+          <li>· A small primitive set: Button, Pill, StatusPill, Card, Field, Sheet, Tabs</li>
+          <li>· Mobile-first shell (tab bar + sheet), tables at <code class="tok">md:</code>+</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-4 rounded-2xl bg-[#0f172a] p-5 text-slate-200 shadow-lift">
+      <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Drop-in token block for <span class="font-mono">src/app/globals.css</span> (retune the accent for coffee)</div>
+<pre class="overflow-auto font-mono text-[12px] leading-relaxed"><span class="text-slate-500">@theme inline {</span>
+  --color-canvas:#fbfcfd;  --color-app:#eef1f4;
+  --color-muted:#f6f8fa;   --color-muted-foreground:#64748b;  --color-subtle:#94a3b8;
+  --color-border:#e6e8ec;  --color-input:#e6e8ec;  --color-ring:#2f6bff;
+  --color-foreground:#111418;   <span class="text-slate-500">/* near-black ink */</span>
+  --color-primary:#2f6bff; --color-primary-foreground:#ffffff;   <span class="text-slate-500">/* church royal blue */</span>
+  --color-accent:#eef3ff;  --color-accent-foreground:#1d4ed8;   <span class="text-slate-500">/* #1d4ed8 = AA link/text */</span>
+  --color-ok:#15803d; --color-ok-bg:#ecfdf3; --color-ok-bd:#a7f0c0;
+  --color-warn:#b54708; --color-warn-bg:#fffaeb; --color-warn-bd:#fedf89;
+  --color-danger:#b42318; --color-danger-bg:#fef3f2; --color-danger-bd:#fecdca;
+  --radius-sm:6px; --radius-md:8px; --radius-lg:10px; --radius-xl:14px; --radius-2xl:16px;
+  --shadow-soft:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.04);
+  --shadow-lift:0 6px 18px rgba(16,24,40,.10),0 2px 6px rgba(16,24,40,.05);
+  --shadow-panel:-12px 0 36px rgba(16,24,40,.14);
+<span class="text-slate-500">}</span></pre>
+    </div>
+
+    <div class="mt-4 rounded-2xl bg-white p-5 shadow-lift">
+      <div class="mb-3 font-bold">Suggested sequence (for the plan we'll formalize)</div>
+      <ol class="space-y-2 text-sm">
+        <li class="flex gap-3"><span class="grid h-6 w-6 flex-none place-items-center rounded-full bg-accent font-mono text-xs font-semibold text-accent-foreground">1</span><span><b>Accent locked — church royal blue.</b> <span class="font-mono">#2f6bff</span> primary / <span class="font-mono">#1d4ed8</span> deep for text &amp; links, matching the church site.</span></li>
+        <li class="flex gap-3"><span class="grid h-6 w-6 flex-none place-items-center rounded-full bg-accent font-mono text-xs font-semibold text-accent-foreground">2</span><span><b>Land the tokens + fonts</b> in <code class="tok">globals.css</code> and <code class="tok">layout.tsx</code> (DM Sans / JetBrains Mono). Pure foundation, no visual screens yet.</span></li>
+        <li class="flex gap-3"><span class="grid h-6 w-6 flex-none place-items-center rounded-full bg-accent font-mono text-xs font-semibold text-accent-foreground">3</span><span><b>Build the mobile-first shell</b> — bottom tab bar + top bar; rail at <code class="tok">md:</code>+.</span></li>
+        <li class="flex gap-3"><span class="grid h-6 w-6 flex-none place-items-center rounded-full bg-accent font-mono text-xs font-semibold text-accent-foreground">4</span><span><b>Extract a primitive set</b> (Button, Pill, StatusPill, Card, Field, Sheet, SegmentedTabs) so screens compose instead of repeating utility soup.</span></li>
+        <li class="flex gap-3"><span class="grid h-6 w-6 flex-none place-items-center rounded-full bg-accent font-mono text-xs font-semibold text-accent-foreground">5</span><span><b>Re-skin screens one slice at a time</b> — Stock, Service report, Runbook, Feedback — card-list on mobile / table at <code class="tok">md:</code>+.</span></li>
+      </ol>
+    </div>
+
+    <div class="mt-4 rounded-xl border border-accent-foreground/20 bg-accent px-4 py-3 text-sm text-accent-foreground">
+      <b>Open questions for you (we'll resolve these into the plan):</b>
+      <span class="mt-1 block">✓ Accent — <b>decided: church royal blue.</b> &nbsp;① Adopt shadcn/ui as the primitive base, or hand-roll a tiny primitive set? &nbsp;② Is the bottom-tab + sheet mobile model right, or do you prefer a hamburger drawer? &nbsp;③ Which screen do we re-skin first as the reference implementation?</span>
+    </div>
+  </section>
+
+  <footer class="mt-12 border-t border-border pt-5 text-xs text-muted-foreground">
+    Generated as a review artifact · tokens &amp; patterns extracted from <code class="tok">Martin_Water_Labs/sample-manager</code> (<code class="tok">docs/design/design-philosophy.md</code>, <code class="tok">app-mockup.html</code>, and the live <code class="tok">src/components</code>). Rendered using sample-manager's own theme so the aesthetic is shown, not described. Nothing here is committed design for acc-coffee yet.
+  </footer>
+</main>
+
+<script>
+  const BRAND=[['primary','#2f6bff','accent / interactive · CTA fill'],['brand-deep','#1d4ed8','AA text + links on white'],['brand-bright','#5b8bff','hover / illustration'],['accent','#eef3ff','active tint'],['accent-foreground','#1d4ed8','on accent'],['ring','#2f6bff','focus ring']];
+  const SURFACE=[['background','#ffffff','cards'],['canvas','#fbfcfd','page'],['app','#eef1f4','app bg'],['muted','#f5f6f8','subtle fill'],['border','#e6e8ec','hairline'],['foreground','#111418','near-black ink']];
+  const STATUS=[['OK / green','#15803d','#ecfdf3','#a7f0c0','synced · paid · in-stock'],['Warn / amber','#b54708','#fffaeb','#fedf89','pending · low · due'],['Danger / red','#b42318','#fef3f2','#fecdca','failed · out · overdue']];
+
+  function chip([name,hex,note]){const dark=['#2f6bff','#1d4ed8','#5b8bff','#111418'].includes(hex);
+    return `<div class="overflow-hidden rounded-xl border border-border">
+      <div class="h-14" style="background:${hex}"></div>
+      <div class="bg-white px-2.5 py-1.5"><div class="font-mono text-[11px] font-medium">${name}</div><div class="font-mono text-[10px] text-subtle">${hex}</div><div class="mt-0.5 text-[10px] text-muted-foreground">${note}</div></div>
+    </div>`;}
+  document.getElementById('sw-brand').innerHTML=BRAND.map(chip).join('');
+  document.getElementById('sw-surface').innerHTML=SURFACE.map(chip).join('');
+  document.getElementById('sw-status').innerHTML=STATUS.map(([n,fg,bg,bd,use])=>`
+    <div class="rounded-xl border p-3" style="border-color:${bd};background:${bg}">
+      <div class="flex items-center gap-2"><span class="h-3.5 w-3.5 rounded-full" style="background:${fg}"></span><span class="text-sm font-semibold" style="color:${fg}">${n}</span></div>
+      <div class="mt-1.5 font-mono text-[10px]" style="color:${fg}">fg ${fg} · bg ${bg} · bd ${bd}</div>
+      <div class="mt-1 text-[11px] text-muted-foreground">${use}</div>
+    </div>`).join('');
+
+  if(window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>
