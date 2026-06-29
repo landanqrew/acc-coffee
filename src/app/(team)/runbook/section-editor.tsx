@@ -2,7 +2,6 @@
 
 import { useActionState } from "react";
 import { Button, fieldInputVariants } from "@/components/ui";
-import { cn } from "@/lib/utils";
 import type { RunbookSectionId } from "@/modules/runbook/runbook";
 import { saveRunbookSectionAction, type RunbookFormState } from "./actions";
 
@@ -46,10 +45,14 @@ export function SectionEditor({
         rows={8}
         defaultValue={content}
         placeholder={placeholder}
-        className={cn(fieldInputVariants({ mono: true }), "text-sm")}
+        aria-invalid={state?.error ? true : undefined}
+        aria-describedby={
+          state?.error ? `runbook-${section}-error` : undefined
+        }
+        className={fieldInputVariants({ mono: true })}
       />
       {state?.error && (
-        <p className="text-xs text-danger" role="alert">
+        <p id={`runbook-${section}-error`} className="text-xs text-danger" role="alert">
           {state.error}
         </p>
       )}

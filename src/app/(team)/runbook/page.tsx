@@ -35,6 +35,9 @@ export default async function RunbookPage() {
       {sections.map((s) => {
         const info = meta.get(s.id)!;
         return (
+          // A section is a self-contained article, so we keep the <article>
+          // element and lift it with cardVariants rather than swapping in the
+          // <Card> div — semantics win over reaching for the component here.
           <article key={s.id} className={cn(cardVariants(), "space-y-3")}>
             <div>
               <h2 className="text-lg font-semibold">{info.label}</h2>
