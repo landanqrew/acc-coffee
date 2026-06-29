@@ -16,8 +16,8 @@ export type ReportQuestion = {
 };
 
 export const REPORT_QUESTIONS: readonly ReportQuestion[] = [
-  { id: "regularPots", label: "Regular coffee brewed (pots)", kind: "number", required: true },
-  { id: "decafPots", label: "Decaf brewed (pots)", kind: "number", required: true },
+  { id: "mediumPots", label: "Medium roast brewed (pots)", kind: "number", required: true },
+  { id: "darkPots", label: "Dark roast brewed (pots)", kind: "number", required: true },
   { id: "leftoverPots", label: "Left over at the end (pots)", kind: "number", required: true },
   { id: "issues", label: "Anything to flag? (optional)", kind: "text", required: false },
 ];
@@ -82,7 +82,7 @@ export function validateReportCounts(
       return { supplyId, count: validateStockCount(n) };
     } catch (err) {
       if (err instanceof StockCountValidationError) {
-        throw new ReportValidationError("Every count must be a whole number of zero or more.");
+        throw new ReportValidationError("Every count must be zero or more.");
       }
       throw err;
     }

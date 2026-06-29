@@ -22,9 +22,9 @@ export async function getBrewQuantities(
 ): Promise<BrewQuantities | null> {
   const row = await db.query.brewQuantities.findFirst({
     where: eq(brewQuantities.serviceId, serviceId),
-    columns: { regularPots: true, decafPots: true },
+    columns: { mediumPots: true, darkPots: true },
   });
-  return row ? { regularPots: row.regularPots, decafPots: row.decafPots } : null;
+  return row ? { mediumPots: row.mediumPots, darkPots: row.darkPots } : null;
 }
 
 /**
@@ -35,29 +35,29 @@ export async function setBrewQuantities(
   actorRole: Role | null | undefined,
   input: {
     serviceId: string;
-    regularPots: unknown;
-    decafPots: unknown;
+    mediumPots: unknown;
+    darkPots: unknown;
     updatedByUserId?: string | null;
   },
 ): Promise<BrewQuantities> {
   assertLead(actorRole);
   const q = validateBrewQuantities({
-    regularPots: input.regularPots,
-    decafPots: input.decafPots,
+    mediumPots: input.mediumPots,
+    darkPots: input.darkPots,
   });
   await db
     .insert(brewQuantities)
     .values({
       serviceId: input.serviceId,
-      regularPots: q.regularPots,
-      decafPots: q.decafPots,
+      mediumPots: q.mediumPots,
+      darkPots: q.darkPots,
       updatedByUserId: input.updatedByUserId ?? null,
     })
     .onConflictDoUpdate({
       target: brewQuantities.serviceId,
       set: {
-        regularPots: q.regularPots,
-        decafPots: q.decafPots,
+        mediumPots: q.mediumPots,
+        darkPots: q.darkPots,
         updatedByUserId: input.updatedByUserId ?? null,
         // Stamp from the DB clock, matching the INSERT path's default now().
         updatedAt: sql`now()`,
@@ -73,10 +73,10 @@ export async function getBrewQuantitiesByService(
   if (serviceIds.length === 0) return new Map();
   const rows = await db.query.brewQuantities.findMany({
     where: inArray(brewQuantities.serviceId, [...serviceIds]),
-    columns: { serviceId: true, regularPots: true, decafPots: true },
+    columns: { serviceId: true, mediumPots: true, darkPots: true },
   });
   return new Map(
-    rows.map((r) => [r.serviceId, { regularPots: r.regularPots, decafPots: r.decafPots }]),
+    rows.map((r) => [r.serviceId, { mediumPots: r.mediumPots, darkPots: r.darkPots }]),
   );
 }
 
@@ -134,7 +134,7 @@ export async function getBrewEditContext(
   const [quantityRows, reportRows] = await Promise.all([
     db.query.brewQuantities.findMany({
       where: inArray(brewQuantities.serviceId, ids),
-      columns: { serviceId: true, regularPots: true, decafPots: true },
+      columns: { serviceId: true, mediumPots: true, darkPots: true },
     }),
     db.query.reports.findMany({
       where: inArray(reports.serviceId, ids),
@@ -146,7 +146,7 @@ export async function getBrewEditContext(
   const priors: PriorQuantities[] = quantityRows.flatMap((r) => {
     const svc = byId.get(r.serviceId);
     return svc
-      ? [{ service: svc, quantities: { regularPots: r.regularPots, decafPots: r.decafPots } }]
+      ? [{ service: svc, quantities: { mediumPots: r.mediumPots, darkPots: r.darkPots } }]
       : [];
   });
   const rows: ReportRow[] = reportRows.flatMap((r) => {

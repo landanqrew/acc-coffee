@@ -21,39 +21,39 @@ const recurring = (over: Partial<ServiceIdentity> = {}): ServiceIdentity => ({
 
 describe("validateBrewQuantities", () => {
   it("accepts whole, zero-or-more pots", () => {
-    expect(validateBrewQuantities({ regularPots: "6", decafPots: "2" })).toEqual({
-      regularPots: 6,
-      decafPots: 2,
+    expect(validateBrewQuantities({ mediumPots: "6", darkPots: "2" })).toEqual({
+      mediumPots: 6,
+      darkPots: 2,
     });
   });
 
   it("accepts zero", () => {
-    expect(validateBrewQuantities({ regularPots: 0, decafPots: 0 })).toEqual({
-      regularPots: 0,
-      decafPots: 0,
+    expect(validateBrewQuantities({ mediumPots: 0, darkPots: 0 })).toEqual({
+      mediumPots: 0,
+      darkPots: 0,
     });
   });
 
   it("rejects a blank field rather than reading it as 0", () => {
-    expect(() => validateBrewQuantities({ regularPots: "", decafPots: "2" })).toThrow(
+    expect(() => validateBrewQuantities({ mediumPots: "", darkPots: "2" })).toThrow(
       BrewValidationError,
     );
   });
 
   it("rejects negative pots", () => {
-    expect(() => validateBrewQuantities({ regularPots: "6", decafPots: "-1" })).toThrow(
+    expect(() => validateBrewQuantities({ mediumPots: "6", darkPots: "-1" })).toThrow(
       BrewValidationError,
     );
   });
 
   it("rejects fractional pots", () => {
-    expect(() => validateBrewQuantities({ regularPots: "1.5", decafPots: "2" })).toThrow(
+    expect(() => validateBrewQuantities({ mediumPots: "1.5", darkPots: "2" })).toThrow(
       BrewValidationError,
     );
   });
 
   it("rejects scientific-notation strings rather than coercing them", () => {
-    expect(() => validateBrewQuantities({ regularPots: "1e2", decafPots: "2" })).toThrow(
+    expect(() => validateBrewQuantities({ mediumPots: "1e2", darkPots: "2" })).toThrow(
       BrewValidationError,
     );
   });
@@ -80,7 +80,7 @@ describe("comparableKey", () => {
 });
 
 describe("selectDefaultQuantities", () => {
-  const prior = (date: string, q: { regularPots: number; decafPots: number }): PriorQuantities => ({
+  const prior = (date: string, q: { mediumPots: number; darkPots: number }): PriorQuantities => ({
     service: recurring({ id: `svc-${date}`, date, scheduleId: "sch-9am" }),
     quantities: q,
   });
@@ -88,10 +88,10 @@ describe("selectDefaultQuantities", () => {
   it("inherits the most recent comparable past Service's quantities", () => {
     const target = recurring({ date: "2026-06-07", scheduleId: "sch-9am" });
     const result = selectDefaultQuantities(target, [
-      prior("2026-05-24", { regularPots: 4, decafPots: 1 }),
-      prior("2026-05-31", { regularPots: 6, decafPots: 2 }),
+      prior("2026-05-24", { mediumPots: 4, darkPots: 1 }),
+      prior("2026-05-31", { mediumPots: 6, darkPots: 2 }),
     ]);
-    expect(result).toEqual({ regularPots: 6, decafPots: 2 });
+    expect(result).toEqual({ mediumPots: 6, darkPots: 2 });
   });
 
   it("ignores Services on a different schedule", () => {
@@ -99,7 +99,7 @@ describe("selectDefaultQuantities", () => {
     const result = selectDefaultQuantities(target, [
       {
         service: recurring({ id: "x", date: "2026-05-31", scheduleId: "sch-11am" }),
-        quantities: { regularPots: 9, decafPots: 9 },
+        quantities: { mediumPots: 9, darkPots: 9 },
       },
     ]);
     expect(result).toBeNull();
@@ -108,8 +108,8 @@ describe("selectDefaultQuantities", () => {
   it("ignores the target's own date and future Services", () => {
     const target = recurring({ date: "2026-06-07", scheduleId: "sch-9am" });
     const result = selectDefaultQuantities(target, [
-      prior("2026-06-07", { regularPots: 3, decafPots: 3 }),
-      prior("2026-06-14", { regularPots: 8, decafPots: 8 }),
+      prior("2026-06-07", { mediumPots: 3, darkPots: 3 }),
+      prior("2026-06-14", { mediumPots: 8, darkPots: 8 }),
     ]);
     expect(result).toBeNull();
   });
@@ -133,13 +133,13 @@ describe("buildLeftoverHistory", () => {
   it("returns comparable past reports, newest first, with brewed/leftover numbers", () => {
     const target = recurring({ date: "2026-06-07", scheduleId: "sch-9am" });
     const history = buildLeftoverHistory(target, [
-      reportRow("2026-05-24", { regularPots: 4, decafPots: 1, leftoverPots: 0 }),
-      reportRow("2026-05-31", { regularPots: 6, decafPots: 2, leftoverPots: 1 }),
+      reportRow("2026-05-24", { mediumPots: 4, darkPots: 1, leftoverPots: 0 }),
+      reportRow("2026-05-31", { mediumPots: 6, darkPots: 2, leftoverPots: 1 }),
     ]);
     expect(history.map((h) => h.date)).toEqual(["2026-05-31", "2026-05-24"]);
     expect(history[0]).toMatchObject({
-      regularPots: 6,
-      decafPots: 2,
+      mediumPots: 6,
+      darkPots: 2,
       leftoverPots: 1,
     });
   });
@@ -172,8 +172,8 @@ describe("buildLeftoverHistory", () => {
       reportRow("2026-05-31", { issues: "ran out early" }),
     ]);
     expect(history[0]).toMatchObject({
-      regularPots: null,
-      decafPots: null,
+      mediumPots: null,
+      darkPots: null,
       leftoverPots: null,
     });
   });

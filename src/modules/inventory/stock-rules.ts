@@ -18,11 +18,11 @@ export class StockCountValidationError extends Error {
   }
 }
 
-/** Validates an observed count: a whole number of zero or more. */
+/** Validates an observed count: a number of zero or more (decimals allowed). */
 export function validateStockCount(count: number): number {
-  if (!Number.isInteger(count) || count < 0) {
+  if (!Number.isFinite(count) || count < 0) {
     throw new StockCountValidationError(
-      "A stock count must be a whole number of zero or more.",
+      "A stock count must be zero or more.",
     );
   }
   return count;

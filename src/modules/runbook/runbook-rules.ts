@@ -22,7 +22,7 @@ export const RUNBOOK_SECTIONS: readonly {
     id: "checklist",
     label: "Setup & teardown checklist",
     description: "The step-by-step list for opening and closing a service day.",
-    placeholder: "1. Unlock the supply closet\n2. Start the first batch of regular\n3. …",
+    placeholder: "1. Unlock the supply closet\n2. Start the first batch of medium roast\n3. …",
   },
   {
     id: "equipment",
@@ -34,7 +34,7 @@ export const RUNBOOK_SECTIONS: readonly {
     id: "supply_locations",
     label: "Supply locations",
     description: "Where everything lives in the building.",
-    placeholder: "- Backup filters: top shelf of the supply closet\n- Decaf: …",
+    placeholder: "- Backup filters: top shelf of the supply closet\n- Dark roast: …",
   },
 ];
 

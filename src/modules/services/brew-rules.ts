@@ -6,8 +6,8 @@ import type { ReportAnswers } from "@/modules/reports/report-rules";
  * brew against what past Reports recorded as brewed and left over.
  */
 export type BrewQuantities = {
-  regularPots: number;
-  decafPots: number;
+  mediumPots: number;
+  darkPots: number;
 };
 
 /** The Service fields brew defaults and leftover history reason about. */
@@ -41,14 +41,14 @@ function parsePots(value: unknown, label: string): number {
   return Number(text);
 }
 
-/** Validates planned brew quantities: regular and decaf each whole and zero-or-more. */
+/** Validates planned brew quantities: medium- and dark-roast each whole and zero-or-more. */
 export function validateBrewQuantities(raw: {
-  regularPots: unknown;
-  decafPots: unknown;
+  mediumPots: unknown;
+  darkPots: unknown;
 }): BrewQuantities {
   return {
-    regularPots: parsePots(raw.regularPots, "Regular coffee (pots)"),
-    decafPots: parsePots(raw.decafPots, "Decaf (pots)"),
+    mediumPots: parsePots(raw.mediumPots, "Medium roast (pots)"),
+    darkPots: parsePots(raw.darkPots, "Dark roast (pots)"),
   };
 }
 
@@ -85,8 +85,8 @@ export type LeftoverEntry = {
   serviceId: string;
   serviceName: string;
   date: string;
-  regularPots: number | null;
-  decafPots: number | null;
+  mediumPots: number | null;
+  darkPots: number | null;
   leftoverPots: number | null;
 };
 
@@ -141,8 +141,8 @@ export function buildLeftoverHistory(
       serviceId: r.service.id,
       serviceName: r.service.name,
       date: r.service.date,
-      regularPots: readNumber(r.answers, "regularPots"),
-      decafPots: readNumber(r.answers, "decafPots"),
+      mediumPots: readNumber(r.answers, "mediumPots"),
+      darkPots: readNumber(r.answers, "darkPots"),
       leftoverPots: readNumber(r.answers, "leftoverPots"),
     }));
 }

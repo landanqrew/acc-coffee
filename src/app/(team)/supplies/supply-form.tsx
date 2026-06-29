@@ -57,8 +57,8 @@ export function SupplyForm({
         name="minimumLevel"
         type="number"
         min={0}
-        step={1}
-        inputMode="numeric"
+        step="any"
+        inputMode="decimal"
         mono
         defaultValue={supply?.minimumLevel ?? ""}
         placeholder="none"

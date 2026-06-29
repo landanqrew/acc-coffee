@@ -22,8 +22,8 @@ export async function setBrewQuantitiesAction(
   try {
     await setBrewQuantities(lead.role, {
       serviceId,
-      regularPots: formData.get("regularPots"),
-      decafPots: formData.get("decafPots"),
+      mediumPots: formData.get("mediumPots"),
+      darkPots: formData.get("darkPots"),
       updatedByUserId: lead.id,
     });
     revalidatePath(`/services/${serviceId}`);

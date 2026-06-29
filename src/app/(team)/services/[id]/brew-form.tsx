@@ -44,8 +44,8 @@ export function BrewForm({
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="py-1 font-medium">Date</th>
-                <th className="py-1 text-right font-medium">Regular</th>
-                <th className="py-1 text-right font-medium">Decaf</th>
+                <th className="py-1 text-right font-medium">Medium</th>
+                <th className="py-1 text-right font-medium">Dark</th>
                 <th className="py-1 text-right font-medium">Left over</th>
               </tr>
             </thead>
@@ -53,8 +53,8 @@ export function BrewForm({
               {history.map((h) => (
                 <tr key={h.serviceId} className="border-t border-border">
                   <td className="py-1 font-sans">{formatShortDate(h.date)}</td>
-                  <td className="py-1 text-right">{h.regularPots ?? "—"}</td>
-                  <td className="py-1 text-right">{h.decafPots ?? "—"}</td>
+                  <td className="py-1 text-right">{h.mediumPots ?? "—"}</td>
+                  <td className="py-1 text-right">{h.darkPots ?? "—"}</td>
                   <td className="py-1 text-right font-medium">
                     {h.leftoverPots ?? "—"}
                   </td>
@@ -75,29 +75,29 @@ export function BrewForm({
           )}
           <div className="flex flex-wrap gap-4">
             <Field
-              id="regularPots"
-              name="regularPots"
-              label="Regular (pots)"
+              id="mediumPots"
+              name="mediumPots"
+              label="Medium roast (pots)"
               type="number"
               min={0}
               step={1}
               inputMode="numeric"
               required
               mono
-              defaultValue={initial?.regularPots ?? ""}
+              defaultValue={initial?.mediumPots ?? ""}
               className="w-28"
             />
             <Field
-              id="decafPots"
-              name="decafPots"
-              label="Decaf (pots)"
+              id="darkPots"
+              name="darkPots"
+              label="Dark roast (pots)"
               type="number"
               min={0}
               step={1}
               inputMode="numeric"
               required
               mono
-              defaultValue={initial?.decafPots ?? ""}
+              defaultValue={initial?.darkPots ?? ""}
               className="w-28"
             />
           </div>

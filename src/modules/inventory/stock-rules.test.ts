@@ -33,14 +33,16 @@ function count(over: Partial<StockCount> = {}): StockCount {
 }
 
 describe("validateStockCount", () => {
-  it("accepts zero and positive whole numbers", () => {
+  it("accepts zero, whole, and fractional numbers", () => {
     expect(validateStockCount(0)).toBe(0);
     expect(validateStockCount(42)).toBe(42);
+    expect(validateStockCount(3.5)).toBe(3.5);
   });
 
-  it("rejects negative, fractional, or NaN counts", () => {
+  it("rejects negative, infinite, or NaN counts", () => {
     expect(() => validateStockCount(-1)).toThrow(StockCountValidationError);
-    expect(() => validateStockCount(3.5)).toThrow(StockCountValidationError);
+    expect(() => validateStockCount(-0.5)).toThrow(StockCountValidationError);
+    expect(() => validateStockCount(Infinity)).toThrow(StockCountValidationError);
     expect(() => validateStockCount(Number("x"))).toThrow(StockCountValidationError);
   });
 });
