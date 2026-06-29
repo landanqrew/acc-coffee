@@ -10,6 +10,7 @@ export {
 export {
   Field,
   fieldInputVariants,
+  FIELD_LABEL_CLS,
   type FieldProps,
 } from "./field";
 export {

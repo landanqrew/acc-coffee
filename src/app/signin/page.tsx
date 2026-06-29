@@ -14,7 +14,7 @@ export default function SignInPage() {
         </div>
 
         <Card elevation="lift" className="space-y-6">
-          <Suspense>
+          <Suspense fallback={<div className="h-[148px]" aria-hidden />}>
             <SignInForm />
           </Suspense>
 

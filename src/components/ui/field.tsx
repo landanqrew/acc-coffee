@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils";
  * The input surface for a Field. `text-base` padding keeps iOS from zooming
  * on focus; `mono` is for numeric / data entry; `invalid` flips to danger.
  */
+/** Shared label styling — reused by callers (e.g. a textarea) that can't wrap in Field. */
+export const FIELD_LABEL_CLS = "mb-1 block text-xs font-medium text-muted-foreground";
+
 export const fieldInputVariants = cva(
   "w-full rounded-lg border bg-white px-3 py-2.5 text-base outline-none transition-colors placeholder:text-subtle",
   {
@@ -49,10 +52,7 @@ export const Field = React.forwardRef<HTMLInputElement, FieldProps>(
 
     return (
       <div className="block">
-        <label
-          htmlFor={inputId}
-          className="mb-1 block text-xs font-medium text-muted-foreground"
-        >
+        <label htmlFor={inputId} className={FIELD_LABEL_CLS}>
           {label}
         </label>
         <input

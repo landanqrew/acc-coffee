@@ -36,13 +36,8 @@ export function SignInForm() {
         autoCorrect="off"
         required
         placeholder="you@church.org"
+        error={errorMessage}
       />
-
-      {errorMessage && (
-        <p className="text-sm text-danger" role="alert">
-          {errorMessage}
-        </p>
-      )}
 
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Sending link…" : "Email me a sign-in link"}

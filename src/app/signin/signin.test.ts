@@ -29,8 +29,8 @@ describe("sign-in re-skin", () => {
     expect(checkEmail).toContain("text-muted-foreground");
   });
 
-  it("renders errors with the danger token, not raw red", () => {
-    expect(form).toContain("text-danger");
+  it("wires the error through Field for aria-invalid / aria-describedby", () => {
+    expect(form).toContain("error={errorMessage}");
     expect(form).not.toContain("text-red-600");
   });
 });

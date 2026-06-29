@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button, Card, fieldInputVariants } from "@/components/ui";
+import { Button, Card, fieldInputVariants, FIELD_LABEL_CLS } from "@/components/ui";
 import { submitFeedbackAction, type SurveyFormState } from "./actions";
 
 type SurveyService = { id: string; name: string; time: string };
@@ -58,7 +58,9 @@ export function SurveyForm({
                   type="radio"
                   name="serviceId"
                   value={s.id}
-                  required
+                  // One `required` per radio group satisfies native validation
+                  // without AT announcing every option as individually required.
+                  required={i === 0}
                   defaultChecked={services.length === 1 && i === 0}
                   className="h-4 w-4 accent-primary"
                 />
@@ -77,13 +79,13 @@ export function SurveyForm({
               {SCALE.map((n) => (
                 <label
                   key={n}
-                  className="flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-lg border border-border py-2 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
+                  className="flex min-h-11 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-border text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
                 >
                   <input
                     type="radio"
                     name={r.id}
                     value={n}
-                    required
+                    required={n === 1}
                     className="sr-only"
                     aria-label={`${r.label} ${n} of 5`}
                   />
@@ -95,10 +97,7 @@ export function SurveyForm({
         ))}
 
         <div className="space-y-1">
-          <label
-            htmlFor="comment"
-            className="mb-1 block text-xs font-medium text-muted-foreground"
-          >
+          <label htmlFor="comment" className={FIELD_LABEL_CLS}>
             Anything else? (optional)
           </label>
           <textarea
