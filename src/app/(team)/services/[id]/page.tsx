@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Card } from "@/components/ui";
 import { requireSession } from "@/lib/dal";
 import { isLead } from "@/modules/auth/roles";
 import { getService } from "@/modules/services/service";
@@ -147,10 +148,10 @@ export default async function ServiceReportPage({
         />
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-lg font-medium">Congregant feedback</h2>
-          <span className="text-sm text-neutral-500">
+          <span className="text-sm text-muted-foreground">
             {feedback.responseCount === 1
               ? "1 response"
               : `${feedback.responseCount} responses`}
@@ -158,35 +159,39 @@ export default async function ServiceReportPage({
         </div>
         {feedback.averages ? (
           <div className="space-y-4">
-            <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+            {/* Averages as stat cards — small uppercase label over a big mono
+                value, so the three ratings scan at a glance and line up. */}
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {FEEDBACK_RATINGS.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex justify-between gap-4 px-4 py-3 text-sm"
-                >
-                  <dt className="text-neutral-500">{r.label}</dt>
-                  <dd className="text-right font-medium">
-                    {feedback.averages![r.id].toFixed(1)}{" "}
-                    <span className="text-neutral-400">/ 5</span>
+                <Card key={r.id} className="p-4">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {r.label}
+                  </dt>
+                  <dd className="mt-1 font-mono tabular-nums text-2xl leading-none">
+                    {feedback.averages![r.id].toFixed(1)}
+                    <span className="ml-1 align-baseline text-sm font-sans text-muted-foreground">
+                      / 5
+                    </span>
                   </dd>
-                </div>
+                </Card>
               ))}
             </dl>
             {feedback.comments.length > 0 && (
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {feedback.comments.map((c, i) => (
-                  <li
-                    key={i}
-                    className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-neutral-700"
-                  >
-                    “{c}”
+                  <li key={i}>
+                    <Card className="border-l-2 border-accent-foreground/30 p-4">
+                      <blockquote className="text-sm leading-relaxed text-muted-foreground">
+                        “{c}”
+                      </blockquote>
+                    </Card>
                   </li>
                 ))}
               </ul>
             )}
           </div>
         ) : (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-subtle">
             No feedback yet for this service.
           </p>
         )}

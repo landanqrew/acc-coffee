@@ -1,13 +1,15 @@
 "use client";
 
+import { Button } from "@/components/ui";
+
 export function PrintButton() {
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
       onClick={() => window.print()}
-      className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-neutral-900 print:hidden"
+      className="print:hidden"
     >
       Print
-    </button>
+    </Button>
   );
 }
