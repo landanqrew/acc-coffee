@@ -1,6 +1,7 @@
 import { eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { invites, users } from "@/db/schema";
+import { sendInviteEmail } from "@/lib/email";
 import {
   decideSignIn,
   normalizeEmail,
@@ -71,6 +72,8 @@ export type CreateInviteInput = {
   /** Role of the caller — must be a Lead. */
   invitedByRole: Role | null | undefined;
   invitedByUserId?: string | null;
+  /** Absolute URL of the sign-in page, included in the invitation email. */
+  signInUrl: string;
 };
 
 /**
@@ -78,6 +81,9 @@ export type CreateInviteInput = {
  * email replaces the outstanding invite (latest wins). Inviting someone who is
  * already a member is rejected — changing an existing member's role is a
  * separate concern not in this slice.
+ *
+ * The invitation email is sent before the invite is persisted, so a delivery
+ * failure surfaces to the caller and leaves no un-notified pending invite.
  */
 export async function createInvite(input: CreateInviteInput): Promise<Invite> {
   assertLead(input.invitedByRole);
@@ -85,6 +91,7 @@ export async function createInvite(input: CreateInviteInput): Promise<Invite> {
   if (await isExistingUser(email)) {
     throw new InviteError(`${email} is already a team member.`);
   }
+  await sendInviteEmail(email, input.role, input.signInUrl);
   await db
     .insert(invites)
     .values({
@@ -98,6 +105,7 @@ export async function createInvite(input: CreateInviteInput): Promise<Invite> {
         role: input.role,
         invitedByUserId: input.invitedByUserId ?? null,
         acceptedAt: null,
+        // Refresh createdAt so the pending-invite list reflects the latest send.
         createdAt: new Date(),
       },
     });
