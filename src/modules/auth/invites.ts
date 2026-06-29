@@ -105,6 +105,7 @@ export async function createInvite(input: CreateInviteInput): Promise<Invite> {
         role: input.role,
         invitedByUserId: input.invitedByUserId ?? null,
         acceptedAt: null,
+        // Refresh createdAt so the pending-invite list reflects the latest send.
         createdAt: new Date(),
       },
     });

@@ -32,7 +32,7 @@ export async function inviteAction(
       role,
       invitedByRole: lead.role,
       invitedByUserId: lead.id,
-      signInUrl: `${await appBaseUrl()}/signin`,
+      signInUrl: `${await appBaseUrl({ trusted: true })}/signin`,
     });
   } catch (err) {
     if (err instanceof InviteError) {
