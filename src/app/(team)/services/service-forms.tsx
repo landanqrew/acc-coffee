@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button, Field, fieldInputVariants } from "@/components/ui";
 import {
   addScheduleAction,
   createAdHocAction,
@@ -18,9 +19,6 @@ const WEEKDAYS = [
   "Saturday",
 ];
 
-const inputClass =
-  "w-full rounded-lg border border-neutral-300 px-4 py-3 text-base outline-none focus:border-neutral-900";
-
 export function ScheduleForm() {
   const [state, action, pending] = useActionState<ServiceFormState, FormData>(
     addScheduleAction,
@@ -29,18 +27,28 @@ export function ScheduleForm() {
 
   return (
     <form action={action} className="space-y-3">
-      <div className="space-y-1">
-        <label htmlFor="sched-name" className="text-sm font-medium">
-          Gathering name
-        </label>
-        <input id="sched-name" name="name" type="text" required placeholder="9am Gathering" className={inputClass} />
-      </div>
+      <Field
+        id="sched-name"
+        label="Gathering name"
+        name="name"
+        type="text"
+        required
+        placeholder="9am Gathering"
+      />
       <div className="flex gap-3">
-        <div className="flex-1 space-y-1">
-          <label htmlFor="sched-weekday" className="text-sm font-medium">
+        <div className="flex-1">
+          <label
+            htmlFor="sched-weekday"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
             Day
           </label>
-          <select id="sched-weekday" name="weekday" defaultValue="0" className={inputClass}>
+          <select
+            id="sched-weekday"
+            name="weekday"
+            defaultValue="0"
+            className={fieldInputVariants()}
+          >
             {WEEKDAYS.map((d, i) => (
               <option key={d} value={i}>
                 {d}
@@ -48,17 +56,22 @@ export function ScheduleForm() {
             ))}
           </select>
         </div>
-        <div className="w-32 space-y-1">
-          <label htmlFor="sched-time" className="text-sm font-medium">
-            Time
-          </label>
-          <input id="sched-time" name="time" type="time" required defaultValue="09:00" className={inputClass} />
+        <div className="w-32">
+          <Field
+            id="sched-time"
+            label="Time"
+            name="time"
+            type="time"
+            required
+            defaultValue="09:00"
+            mono
+          />
         </div>
       </div>
       <FormStatus state={state} />
-      <button type="submit" disabled={pending} className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+      <Button type="submit" disabled={pending}>
         {pending ? "Saving…" : "Add gathering"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -71,30 +84,41 @@ export function AdHocForm() {
 
   return (
     <form action={action} className="space-y-3">
-      <div className="space-y-1">
-        <label htmlFor="adhoc-name" className="text-sm font-medium">
-          Service name
-        </label>
-        <input id="adhoc-name" name="name" type="text" required placeholder="Christmas Eve" className={inputClass} />
-      </div>
+      <Field
+        id="adhoc-name"
+        label="Service name"
+        name="name"
+        type="text"
+        required
+        placeholder="Christmas Eve"
+      />
       <div className="flex gap-3">
-        <div className="flex-1 space-y-1">
-          <label htmlFor="adhoc-date" className="text-sm font-medium">
-            Date
-          </label>
-          <input id="adhoc-date" name="date" type="date" required className={inputClass} />
+        <div className="flex-1">
+          <Field
+            id="adhoc-date"
+            label="Date"
+            name="date"
+            type="date"
+            required
+            mono
+          />
         </div>
-        <div className="w-32 space-y-1">
-          <label htmlFor="adhoc-time" className="text-sm font-medium">
-            Time
-          </label>
-          <input id="adhoc-time" name="time" type="time" required defaultValue="18:00" className={inputClass} />
+        <div className="w-32">
+          <Field
+            id="adhoc-time"
+            label="Time"
+            name="time"
+            type="time"
+            required
+            defaultValue="18:00"
+            mono
+          />
         </div>
       </div>
       <FormStatus state={state} />
-      <button type="submit" disabled={pending} className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+      <Button type="submit" disabled={pending}>
         {pending ? "Saving…" : "Add service"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -108,15 +132,16 @@ export function RemoveScheduleForm({ id }: { id: string }) {
   return (
     <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="id" value={id} />
-      <button
+      <Button
         type="submit"
+        variant="link"
         disabled={pending}
-        className="text-red-600 underline-offset-2 hover:underline disabled:opacity-60"
+        className="text-danger"
       >
         {pending ? "Removing…" : "Remove"}
-      </button>
+      </Button>
       {state?.error && (
-        <span className="text-xs text-red-600" role="alert">
+        <span className="text-xs text-danger" role="alert">
           {state.error}
         </span>
       )}
@@ -127,14 +152,14 @@ export function RemoveScheduleForm({ id }: { id: string }) {
 function FormStatus({ state }: { state: ServiceFormState }) {
   if (state?.error) {
     return (
-      <p className="text-sm text-red-600" role="alert">
+      <p className="text-sm text-danger" role="alert">
         {state.error}
       </p>
     );
   }
   if (state?.ok) {
     return (
-      <p className="text-sm text-green-700" role="status">
+      <p className="text-sm text-ok" role="status">
         {state.ok}
       </p>
     );
