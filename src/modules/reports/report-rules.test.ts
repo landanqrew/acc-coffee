@@ -1,11 +1,33 @@
 import { describe, expect, it } from "vitest";
 import {
+  answerText,
   planReport,
   REPORT_QUESTIONS,
   ReportValidationError,
   validateAnswers,
   validateReportCounts,
 } from "./report-rules";
+
+describe("answerText", () => {
+  it("renders scalar answers verbatim", () => {
+    expect(answerText(4)).toBe("4");
+    expect(answerText(0)).toBe("0");
+    expect(answerText("burner flaky")).toBe("burner flaky");
+  });
+
+  it("shows an em dash for blank or absent answers", () => {
+    expect(answerText(undefined)).toBe("—");
+    expect(answerText(null)).toBe("—");
+    expect(answerText("")).toBe("—");
+  });
+
+  it("never hands a raw object/array to the view — coerces to text", () => {
+    // A non-scalar stored answer (legacy/hand-edited row) must not crash the
+    // Service page with "Objects are not valid as a React child".
+    expect(answerText({ note: "x" })).toBe('{"note":"x"}');
+    expect(answerText([1, 2])).toBe("[1,2]");
+  });
+});
 
 describe("validateAnswers", () => {
   const valid = { regularPots: "3", decafPots: "1", leftoverPots: "0", issues: "  burner flaky " };
