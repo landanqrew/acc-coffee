@@ -10,7 +10,7 @@ import {
 } from "./report-rules";
 
 export { ReportValidationError } from "./report-rules";
-export { REPORT_QUESTIONS } from "./report-rules";
+export { REPORT_QUESTIONS, answerText } from "./report-rules";
 export type { ReportAnswers, ReportQuestion } from "./report-rules";
 
 export type Report = {

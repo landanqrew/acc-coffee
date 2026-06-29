@@ -8,6 +8,7 @@ import { getService } from "@/modules/services/service";
 import { getBrewEditContext, getBrewQuantities } from "@/modules/services/brew";
 import { FEEDBACK_RATINGS, getFeedbackSummary } from "@/modules/feedback/feedback";
 import {
+  answerText,
   getReportDetail,
   listDesignatedSupplies,
   REPORT_QUESTIONS,
@@ -126,7 +127,7 @@ export default async function ServiceReportPage({
                   <ReadRow
                     key={q.id}
                     label={q.label}
-                    value={detail.report.answers[q.id] ?? "—"}
+                    value={answerText(detail.report.answers[q.id])}
                   />
                 ))}
               </dl>

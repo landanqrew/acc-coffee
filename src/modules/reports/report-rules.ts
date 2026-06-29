@@ -25,6 +25,23 @@ export const REPORT_QUESTIONS: readonly ReportQuestion[] = [
 /** A filed-out answer set, keyed by question id. */
 export type ReportAnswers = Record<string, number | string>;
 
+/**
+ * A stored Report answer as displayable text. Answers are validated to scalars
+ * on the way in, but a value read back from storage isn't guaranteed to be one
+ * (legacy or hand-edited rows). Coerce anything non-scalar to readable text so a
+ * single odd answer degrades gracefully instead of crashing the whole Service
+ * page when React is handed a raw object ("Objects are not valid as a React
+ * child"). Blank/absent answers render as an em dash.
+ */
+export function answerText(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  // Treat whitespace-only strings as blank too, so a legacy " " row reads as an
+  // em dash rather than an invisible cell.
+  if (typeof value === "string") return value.trim() === "" ? "—" : value;
+  if (typeof value === "number") return String(value);
+  return JSON.stringify(value);
+}
+
 /** A caller-facing problem with a Report submission. */
 export class ReportValidationError extends Error {
   constructor(message: string) {
