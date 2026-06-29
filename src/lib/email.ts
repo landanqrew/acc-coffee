@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { requireEnv } from "@/lib/env";
+import type { Role } from "@/modules/auth/roles";
 
 type EmailMessage = {
   to: string;
@@ -34,6 +35,28 @@ export async function sendRestockAlert(
       `Current count: ${alert.count}\n` +
       `Minimum: ${alert.minimum}\n\n` +
       "Time to restock.",
+  });
+}
+
+/**
+ * Emails a team invitation. The invite itself only grants access — it does not
+ * contain a working link — so we point the recipient at the sign-in page, where
+ * they request their own one-time magic link.
+ */
+export async function sendInviteEmail(
+  to: string,
+  role: Role,
+  signInUrl: string,
+): Promise<void> {
+  const roleLabel = role === "lead" ? "Lead" : "Volunteer";
+  await sendEmail({
+    to,
+    subject: "You've been invited to acc-coffee",
+    text:
+      `You've been invited to join acc-coffee as a ${roleLabel}.\n\n` +
+      `To accept, go to the sign-in page and enter this email address:\n\n` +
+      `${signInUrl}\n\n` +
+      "We'll email you a one-time link that signs you in.",
   });
 }
 

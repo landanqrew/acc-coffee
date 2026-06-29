@@ -1,6 +1,6 @@
-import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { Card } from "@/components/ui";
+import { appBaseUrl } from "@/lib/app-url";
 import { requireSession } from "@/lib/dal";
 import { PrintButton } from "./print-button";
 
@@ -10,23 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function FeedbackQrPage() {
   await requireSession();
 
-  // Prefer a configured canonical base URL so the printed QR is stable across
-  // proxies/hosts; fall back to the request host when none is set.
-  const configuredBase = (
-    process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL
-  )?.replace(/\/+$/, "");
-  let surveyUrl: string;
-  if (configuredBase) {
-    surveyUrl = `${configuredBase}/survey`;
-  } else {
-    const h = await headers();
-    const host = h.get("host") ?? "";
-    // Trust the proxy's proto in production; fall back to http only for local
-    // hosts so the printed QR points somewhere that actually resolves in dev.
-    const isLocal = /^(localhost|127\.0\.0\.1)(:|$)/.test(host);
-    const proto = h.get("x-forwarded-proto") ?? (isLocal ? "http" : "https");
-    surveyUrl = `${proto}://${host}/survey`;
-  }
+  const surveyUrl = `${await appBaseUrl()}/survey`;
 
   // Server-rendered SVG QR — no client JS, prints crisply at any size.
   const qrSvg = await QRCode.toString(surveyUrl, {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { appBaseUrl } from "@/lib/app-url";
 import { requireLead } from "@/lib/dal";
 import { createInvite, InviteError } from "@/modules/auth/invites";
 import { isRole } from "@/modules/auth/roles";
@@ -31,15 +32,16 @@ export async function inviteAction(
       role,
       invitedByRole: lead.role,
       invitedByUserId: lead.id,
+      signInUrl: `${await appBaseUrl()}/signin`,
     });
   } catch (err) {
     if (err instanceof InviteError) {
       return { error: err.message };
     }
     console.error("Failed to create invite:", err);
-    return { error: "Couldn't send the invite. Please try again." };
+    return { error: "Couldn't send the invite email. Please try again." };
   }
 
   revalidatePath("/team");
-  return { ok: `Invited ${email.toLowerCase()} as ${role}.` };
+  return { ok: `Invited ${email.toLowerCase()} as ${role} — we've emailed them an invite.` };
 }
