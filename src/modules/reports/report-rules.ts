@@ -5,8 +5,9 @@ import {
 
 /**
  * The fixed v1 operational question set for a Service Report. Defined in code,
- * not Lead-editable (per PRD). Numbers are whole counts of pots; `issues` is
- * optional free text for anything worth flagging.
+ * not Lead-editable (per PRD). These number answers are whole counts of pots;
+ * `issues` is optional free text. (The per-Supply Stock Counts are validated
+ * separately by `validateReportCounts` and may be fractional.)
  */
 export type ReportQuestion = {
   id: string;
