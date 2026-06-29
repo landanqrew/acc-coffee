@@ -2,6 +2,7 @@
 
 import { useActionState, useId } from "react";
 import { Button, Field, fieldInputVariants } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { inviteAction } from "./actions";
 
 export function InviteForm() {
@@ -20,7 +21,6 @@ export function InviteForm() {
         autoCorrect="off"
         required
         placeholder="newmember@church.org"
-        error={state?.error}
       />
 
       <div className="block">
@@ -30,17 +30,38 @@ export function InviteForm() {
         >
           Role
         </label>
-        <select
-          id={roleId}
-          name="role"
-          defaultValue="volunteer"
-          className={fieldInputVariants()}
-        >
-          <option value="volunteer">Volunteer</option>
-          <option value="lead">Lead</option>
-        </select>
+        <div className="relative">
+          <select
+            id={roleId}
+            name="role"
+            defaultValue="volunteer"
+            className={cn(fieldInputVariants(), "appearance-none pr-10")}
+          >
+            <option value="volunteer">Volunteer</option>
+            <option value="lead">Lead</option>
+          </select>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-subtle"
+          >
+            <path
+              d="m6 8 4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
       </div>
 
+      {state?.error && (
+        <p className="text-sm text-danger" role="alert">
+          {state.error}
+        </p>
+      )}
       {state?.ok && (
         <p className="text-sm text-ok" role="status">
           {state.ok}

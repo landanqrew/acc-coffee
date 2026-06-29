@@ -21,8 +21,12 @@ export function ChurchAdminForm({ current }: { current: string | null }) {
         placeholder="admin@church.org"
         inputMode="email"
         autoComplete="email"
-        error={state?.error}
       />
+      {state?.error && (
+        <p className="text-sm text-danger" role="alert">
+          {state.error}
+        </p>
+      )}
       {state?.ok && (
         <p className="text-sm text-ok" role="status">
           {state.ok}
