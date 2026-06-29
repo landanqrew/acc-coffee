@@ -23,6 +23,9 @@ export function SupplyForm({
   onSaved?: () => void;
 }) {
   const isEdit = Boolean(supply);
+  // useActionState locks the action at mount, which is safe here: a given form
+  // instance is always create (AddSupply, no `supply`) or always edit
+  // (SupplyCard, with `supply`) — the `supply` prop never flips mid-mount.
   const [state, action, pending] = useActionState<SupplyFormState, FormData>(
     isEdit ? updateSupplyAction : createSupplyAction,
     undefined,
@@ -46,6 +49,7 @@ export function SupplyForm({
         autoFocus
         defaultValue={supply?.name ?? ""}
         placeholder="e.g. Medium roast beans"
+        error={state?.error}
       />
 
       <Field
@@ -70,12 +74,6 @@ export function SupplyForm({
         />
         Count this on every Service Report
       </label>
-
-      {state?.error && (
-        <p className="text-sm text-danger" role="alert">
-          {state.error}
-        </p>
-      )}
 
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : isEdit ? "Save changes" : "Add supply"}
