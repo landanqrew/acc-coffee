@@ -19,6 +19,7 @@ describe("answerText", () => {
     expect(answerText(undefined)).toBe("—");
     expect(answerText(null)).toBe("—");
     expect(answerText("")).toBe("—");
+    expect(answerText("   ")).toBe("—");
   });
 
   it("never hands a raw object/array to the view — coerces to text", () => {

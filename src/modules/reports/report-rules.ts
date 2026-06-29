@@ -34,8 +34,11 @@ export type ReportAnswers = Record<string, number | string>;
  * child"). Blank/absent answers render as an em dash.
  */
 export function answerText(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (value === null || value === undefined) return "—";
+  // Treat whitespace-only strings as blank too, so a legacy " " row reads as an
+  // em dash rather than an invisible cell.
+  if (typeof value === "string") return value.trim() === "" ? "—" : value;
+  if (typeof value === "number") return String(value);
   return JSON.stringify(value);
 }
 
