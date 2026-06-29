@@ -31,12 +31,16 @@ function formatTime(time: string): string {
   }).format(new Date(Date.UTC(2000, 0, 1, h, m)));
 }
 
-/** Label + mono value row inside a read Card — digits line up across rows. */
+/**
+ * Label + mono value row inside a read Card — digits line up across rows.
+ * Renders as a `<dt>`/`<dd>` pair so the surrounding `<dl>` keeps its
+ * definition-list semantics for assistive tech.
+ */
 function ReadRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-mono tabular-nums font-medium">{value}</span>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-mono tabular-nums font-medium">{value}</dd>
     </div>
   );
 }
@@ -89,9 +93,11 @@ export default async function ServiceReportPage({
             history={brew!.history}
           />
         ) : brewQuantities ? (
-          <Card className="space-y-3">
-            <ReadRow label="Regular (pots)" value={brewQuantities.regularPots} />
-            <ReadRow label="Decaf (pots)" value={brewQuantities.decafPots} />
+          <Card>
+            <dl className="space-y-3">
+              <ReadRow label="Regular (pots)" value={brewQuantities.regularPots} />
+              <ReadRow label="Decaf (pots)" value={brewQuantities.decafPots} />
+            </dl>
           </Card>
         ) : (
           <p className="text-sm text-subtle">
@@ -114,24 +120,28 @@ export default async function ServiceReportPage({
 
           <div className="space-y-3">
             <h2 className="text-lg font-medium">How it went</h2>
-            <Card className="space-y-3">
-              {REPORT_QUESTIONS.map((q) => (
-                <ReadRow
-                  key={q.id}
-                  label={q.label}
-                  value={detail.report.answers[q.id] ?? "—"}
-                />
-              ))}
+            <Card>
+              <dl className="space-y-3">
+                {REPORT_QUESTIONS.map((q) => (
+                  <ReadRow
+                    key={q.id}
+                    label={q.label}
+                    value={detail.report.answers[q.id] ?? "—"}
+                  />
+                ))}
+              </dl>
             </Card>
           </div>
 
           <div className="space-y-3">
             <h2 className="text-lg font-medium">Counts recorded</h2>
             {detail.counts.length > 0 ? (
-              <Card className="space-y-3">
-                {detail.counts.map((c) => (
-                  <ReadRow key={c.supplyId} label={c.supplyName} value={c.count} />
-                ))}
+              <Card>
+                <dl className="space-y-3">
+                  {detail.counts.map((c) => (
+                    <ReadRow key={c.supplyId} label={c.supplyName} value={c.count} />
+                  ))}
+                </dl>
               </Card>
             ) : (
               <p className="text-sm text-subtle">No counts were recorded.</p>
