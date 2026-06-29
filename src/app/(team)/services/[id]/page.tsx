@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui";
@@ -30,6 +31,20 @@ function formatTime(time: string): string {
   }).format(new Date(Date.UTC(2000, 0, 1, h, m)));
 }
 
+/**
+ * Label + mono value row inside a read Card — digits line up across rows.
+ * Renders as a `<dt>`/`<dd>` pair so the surrounding `<dl>` keeps its
+ * definition-list semantics for assistive tech.
+ */
+function ReadRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 text-sm">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-mono tabular-nums font-medium">{value}</dd>
+    </div>
+  );
+}
+
 export default async function ServiceReportPage({
   params,
 }: {
@@ -58,12 +73,12 @@ export default async function ServiceReportPage({
       <div className="space-y-1">
         <Link
           href="/services"
-          className="text-sm text-neutral-500 underline-offset-2 hover:underline"
+          className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           ← Services
         </Link>
         <h1 className="text-2xl font-semibold">{service.name}</h1>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           {formatDate(service.date)} · {formatTime(service.time)}
         </p>
       </div>
@@ -78,18 +93,14 @@ export default async function ServiceReportPage({
             history={brew!.history}
           />
         ) : brewQuantities ? (
-          <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
-            <div className="flex justify-between gap-4 px-4 py-3 text-sm">
-              <dt className="text-neutral-500">Regular (pots)</dt>
-              <dd className="text-right font-medium">{brewQuantities.regularPots}</dd>
-            </div>
-            <div className="flex justify-between gap-4 px-4 py-3 text-sm">
-              <dt className="text-neutral-500">Decaf (pots)</dt>
-              <dd className="text-right font-medium">{brewQuantities.decafPots}</dd>
-            </div>
-          </dl>
+          <Card>
+            <dl className="space-y-3">
+              <ReadRow label="Regular (pots)" value={brewQuantities.regularPots} />
+              <ReadRow label="Decaf (pots)" value={brewQuantities.decafPots} />
+            </dl>
+          </Card>
         ) : (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-subtle">
             A Lead hasn&rsquo;t set brew quantities for this Service yet.
           </p>
         )}
@@ -97,7 +108,7 @@ export default async function ServiceReportPage({
 
       {detail ? (
         <div className="space-y-6">
-          <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
+          <p className="rounded-2xl border border-ok-bd bg-ok-bg px-4 py-3 text-sm text-ok">
             Report filed{" "}
             {new Intl.DateTimeFormat("en-US", {
               dateStyle: "medium",
@@ -109,34 +120,31 @@ export default async function ServiceReportPage({
 
           <div className="space-y-3">
             <h2 className="text-lg font-medium">How it went</h2>
-            <dl className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
-              {REPORT_QUESTIONS.map((q) => (
-                <div key={q.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
-                  <dt className="text-neutral-500">{q.label}</dt>
-                  <dd className="text-right font-medium">
-                    {detail.report.answers[q.id] ?? "—"}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <Card>
+              <dl className="space-y-3">
+                {REPORT_QUESTIONS.map((q) => (
+                  <ReadRow
+                    key={q.id}
+                    label={q.label}
+                    value={detail.report.answers[q.id] ?? "—"}
+                  />
+                ))}
+              </dl>
+            </Card>
           </div>
 
           <div className="space-y-3">
             <h2 className="text-lg font-medium">Counts recorded</h2>
             {detail.counts.length > 0 ? (
-              <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
-                {detail.counts.map((c) => (
-                  <li
-                    key={c.supplyId}
-                    className="flex justify-between gap-4 px-4 py-3 text-sm"
-                  >
-                    <span>{c.supplyName}</span>
-                    <span className="font-medium">{c.count}</span>
-                  </li>
-                ))}
-              </ul>
+              <Card>
+                <dl className="space-y-3">
+                  {detail.counts.map((c) => (
+                    <ReadRow key={c.supplyId} label={c.supplyName} value={c.count} />
+                  ))}
+                </dl>
+              </Card>
             ) : (
-              <p className="text-sm text-neutral-400">No counts were recorded.</p>
+              <p className="text-sm text-subtle">No counts were recorded.</p>
             )}
           </div>
         </div>
@@ -148,7 +156,7 @@ export default async function ServiceReportPage({
         />
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-lg font-medium">Congregant feedback</h2>
           <span className="text-sm text-muted-foreground">
@@ -159,34 +167,29 @@ export default async function ServiceReportPage({
         </div>
         {feedback.averages ? (
           <div className="space-y-4">
-            {/* Averages as stat cards — small uppercase label over a big mono
-                value, so the three ratings scan at a glance and line up. */}
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {FEEDBACK_RATINGS.map((r) => (
-                <Card key={r.id}>
-                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Card key={r.id} className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
                     {r.label}
-                  </dt>
-                  <dd className="mt-1 font-mono tabular-nums text-2xl leading-none">
+                  </p>
+                  <p className="font-mono tabular-nums text-2xl leading-none">
                     {feedback.averages![r.id].toFixed(1)}
-                    <span className="ml-1 align-baseline text-sm font-sans text-muted-foreground">
+                    <span className="ml-1 text-sm font-sans text-muted-foreground">
                       / 5
                     </span>
-                  </dd>
+                  </p>
                 </Card>
               ))}
-            </dl>
+            </div>
             {feedback.comments.length > 0 && (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {feedback.comments.map((c, i) => (
-                  <li key={i}>
-                    <Card>
-                      {/* Quote marks are decorative — the blockquote already
-                          announces the quotation, so hide them from AT. */}
-                      <blockquote className="text-sm leading-relaxed text-muted-foreground">
-                        <span aria-hidden="true">“</span>{c}<span aria-hidden="true">”</span>
-                      </blockquote>
-                    </Card>
+                  <li
+                    key={i}
+                    className="rounded-2xl bg-muted px-4 py-3 text-sm text-foreground"
+                  >
+                    “{c}”
                   </li>
                 ))}
               </ul>

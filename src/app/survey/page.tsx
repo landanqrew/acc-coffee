@@ -9,10 +9,10 @@ export default async function SurveyPage() {
   const services = await getTodaysServices();
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-4 py-10">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 bg-app px-4 py-10">
       <div className="space-y-1 text-center">
         <h1 className="text-2xl font-semibold">How was the coffee?</h1>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           A few quick taps — no account needed.
         </p>
       </div>
@@ -23,7 +23,7 @@ export default async function SurveyPage() {
           ratings={FEEDBACK_RATINGS.map((r) => ({ id: r.id, label: r.label }))}
         />
       ) : (
-        <p className="rounded-lg bg-neutral-100 px-4 py-6 text-center text-sm text-neutral-600">
+        <p className="rounded-2xl bg-muted px-4 py-6 text-center text-sm text-muted-foreground">
           There aren’t any services today, so we’re not collecting feedback right
           now. Thanks for stopping by — please check back on a service day!
         </p>
