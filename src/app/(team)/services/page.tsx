@@ -111,7 +111,10 @@ export default async function ServicesPage() {
                     <div className="flex items-start justify-between gap-3">
                       <Link
                         href={`/services/${s.id}`}
-                        className="font-medium underline-offset-2 hover:underline"
+                        aria-label={
+                          s.kind === "ad_hoc" ? `${s.name} (Special)` : undefined
+                        }
+                        className="rounded font-medium underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         {s.name}
                       </Link>
