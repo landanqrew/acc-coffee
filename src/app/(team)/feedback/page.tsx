@@ -54,6 +54,8 @@ export default async function FeedbackQrPage() {
         <p className="text-lg font-medium">How was the coffee?</p>
         <div
           className="mx-auto w-56"
+          role="img"
+          aria-label="QR code — scan to open the feedback survey"
           // Trusted, server-generated SVG from the qrcode library.
           dangerouslySetInnerHTML={{ __html: qrSvg }}
         />

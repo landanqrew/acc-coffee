@@ -163,7 +163,7 @@ export default async function ServiceReportPage({
                 value, so the three ratings scan at a glance and line up. */}
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {FEEDBACK_RATINGS.map((r) => (
-                <Card key={r.id} className="p-4">
+                <Card key={r.id}>
                   <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     {r.label}
                   </dt>
@@ -180,9 +180,11 @@ export default async function ServiceReportPage({
               <ul className="space-y-3">
                 {feedback.comments.map((c, i) => (
                   <li key={i}>
-                    <Card className="border-l-2 border-accent-foreground/30 p-4">
+                    <Card>
+                      {/* Quote marks are decorative — the blockquote already
+                          announces the quotation, so hide them from AT. */}
                       <blockquote className="text-sm leading-relaxed text-muted-foreground">
-                        “{c}”
+                        <span aria-hidden="true">“</span>{c}<span aria-hidden="true">”</span>
                       </blockquote>
                     </Card>
                   </li>
