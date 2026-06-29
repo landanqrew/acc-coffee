@@ -1,11 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button, Card, Field } from "@/components/ui";
 import type { BrewQuantities, LeftoverEntry } from "@/modules/services/brew";
 import { setBrewQuantitiesAction, type BrewFormState } from "./actions";
-
-const fieldClass =
-  "w-24 rounded-lg border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-900";
 
 function formatShortDate(date: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -37,93 +35,87 @@ export function BrewForm({
   return (
     <div className="space-y-4">
       {history.length > 0 && (
-        <div className="space-y-2 rounded-lg border border-neutral-200 p-4">
+        <Card className="space-y-2">
           <h3 className="text-sm font-medium">Recent leftovers</h3>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-muted-foreground">
             What past comparable Services brewed and had left over — for reference.
           </p>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-neutral-500">
+              <tr className="text-left text-xs text-muted-foreground">
                 <th className="py-1 font-medium">Date</th>
                 <th className="py-1 text-right font-medium">Regular</th>
                 <th className="py-1 text-right font-medium">Decaf</th>
                 <th className="py-1 text-right font-medium">Left over</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="font-mono tabular-nums">
               {history.map((h) => (
-                <tr key={h.serviceId} className="border-t border-neutral-100">
-                  <td className="py-1">{formatShortDate(h.date)}</td>
+                <tr key={h.serviceId} className="border-t border-border">
+                  <td className="py-1 font-sans">{formatShortDate(h.date)}</td>
                   <td className="py-1 text-right">{h.regularPots ?? "—"}</td>
                   <td className="py-1 text-right">{h.decafPots ?? "—"}</td>
-                  <td className="py-1 text-right font-medium">{h.leftoverPots ?? "—"}</td>
+                  <td className="py-1 text-right font-medium">
+                    {h.leftoverPots ?? "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
-      <form action={action} className="space-y-4">
-        <input type="hidden" name="serviceId" value={serviceId} />
-        {!current && inherited && (
-          <p className="text-xs text-neutral-500">
-            Starting from the previous comparable Service — adjust as needed.
-          </p>
-        )}
-        <div className="flex flex-wrap gap-4">
-          <div className="space-y-1">
-            <label htmlFor="regularPots" className="text-sm font-medium">
-              Regular (pots)
-            </label>
-            <input
+      <Card className="space-y-4">
+        <form action={action} className="space-y-4">
+          <input type="hidden" name="serviceId" value={serviceId} />
+          {!current && inherited && (
+            <p className="text-xs text-muted-foreground">
+              Starting from the previous comparable Service — adjust as needed.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-4">
+            <Field
               id="regularPots"
               name="regularPots"
+              label="Regular (pots)"
               type="number"
-              min="0"
-              step="1"
+              min={0}
+              step={1}
               inputMode="numeric"
               required
+              mono
               defaultValue={initial?.regularPots ?? ""}
-              className={fieldClass}
+              className="w-28"
             />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="decafPots" className="text-sm font-medium">
-              Decaf (pots)
-            </label>
-            <input
+            <Field
               id="decafPots"
               name="decafPots"
+              label="Decaf (pots)"
               type="number"
-              min="0"
-              step="1"
+              min={0}
+              step={1}
               inputMode="numeric"
               required
+              mono
               defaultValue={initial?.decafPots ?? ""}
-              className={fieldClass}
+              className="w-28"
             />
           </div>
-        </div>
-        {state?.error && (
-          <p className="text-sm text-red-600" role="alert">
-            {state.error}
-          </p>
-        )}
-        {state?.ok && (
-          <p className="text-sm text-green-700" role="status">
-            {state.ok}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {pending ? "Saving…" : "Save brew quantities"}
-        </button>
-      </form>
+          {state?.error && (
+            <p className="text-sm text-danger" role="alert">
+              {state.error}
+            </p>
+          )}
+          {state?.ok && (
+            <p className="text-sm text-ok" role="status">
+              {state.ok}
+            </p>
+          )}
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving…" : "Save brew quantities"}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

@@ -1,12 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
+import {
+  Button,
+  Card,
+  Field,
+  fieldInputVariants,
+} from "@/components/ui";
+import { cn } from "@/lib/utils";
 import type { ReportQuestion } from "@/modules/reports/report";
 import type { Supply } from "@/modules/inventory/supply";
 import { fileReportAction, type ReportFormState } from "./actions";
-
-const fieldClass =
-  "w-full rounded-lg border border-neutral-300 px-4 py-3 text-base outline-none focus:border-neutral-900";
 
 export function ReportForm({
   serviceId,
@@ -23,86 +27,80 @@ export function ReportForm({
   );
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-4">
       <input type="hidden" name="serviceId" value={serviceId} />
 
-      <div className="space-y-3">
+      <Card className="space-y-4">
         <h2 className="text-lg font-medium">How did it go?</h2>
-        {questions.map((q) => (
-          <div key={q.id} className="space-y-1">
-            <label htmlFor={`q-${q.id}`} className="text-sm font-medium">
-              {q.label}
-            </label>
-            {q.kind === "number" ? (
-              <input
-                id={`q-${q.id}`}
-                name={q.id}
-                type="number"
-                min="0"
-                step="1"
-                inputMode="numeric"
-                required={q.required}
-                defaultValue="0"
-                className={fieldClass}
-              />
-            ) : (
+        {questions.map((q) =>
+          q.kind === "number" ? (
+            <Field
+              key={q.id}
+              id={`q-${q.id}`}
+              name={q.id}
+              label={q.label}
+              type="number"
+              min={0}
+              step={1}
+              inputMode="numeric"
+              required={q.required}
+              mono
+              defaultValue="0"
+            />
+          ) : (
+            <div key={q.id} className="block">
+              <label
+                htmlFor={`q-${q.id}`}
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                {q.label}
+              </label>
               <textarea
                 id={`q-${q.id}`}
                 name={q.id}
                 rows={2}
                 required={q.required}
-                className={fieldClass}
+                className={cn(fieldInputVariants(), "resize-y")}
               />
-            )}
-          </div>
-        ))}
-      </div>
+            </div>
+          ),
+        )}
+      </Card>
 
-      <div className="space-y-3">
+      <Card className="space-y-4">
         <h2 className="text-lg font-medium">Count the supplies</h2>
         {designated.length > 0 ? (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+          <div className="space-y-4">
             {designated.map((supply) => (
-              <li
+              <Field
                 key={supply.id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
-              >
-                <label htmlFor={`count-${supply.id}`} className="text-sm font-medium">
-                  {supply.name}
-                </label>
-                <input
-                  id={`count-${supply.id}`}
-                  name={`count_${supply.id}`}
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  required
-                  aria-label={`${supply.name} count`}
-                  className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-900"
-                />
-              </li>
+                id={`count-${supply.id}`}
+                name={`count_${supply.id}`}
+                label={supply.name}
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                required
+                mono
+              />
             ))}
-          </ul>
+          </div>
         ) : (
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-subtle">
             No supplies are designated for counting yet.
           </p>
         )}
-      </div>
+      </Card>
 
       {state?.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {state.error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Filing…" : "File report"}
-      </button>
+      </Button>
     </form>
   );
 }
