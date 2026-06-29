@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import QRCode from "qrcode";
+import { Card } from "@/components/ui";
 import { requireSession } from "@/lib/dal";
 import { PrintButton } from "./print-button";
 
@@ -39,7 +40,7 @@ export default async function FeedbackQrPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Feedback Survey</h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             Print this and set it out where coffee is served. Scanning it opens
             the anonymous survey — no account needed.
           </p>
@@ -47,15 +48,21 @@ export default async function FeedbackQrPage() {
         <PrintButton />
       </div>
 
-      <div className="space-y-4 rounded-lg border border-neutral-200 p-6 text-center">
+      {/* Lifted card on screen; keep a hairline frame when printed, where the
+          shadow drops out, so the QR still reads as a bordered handout. */}
+      <Card className="space-y-4 p-6 text-center print:border print:border-border print:shadow-none">
         <p className="text-lg font-medium">How was the coffee?</p>
         <div
           className="mx-auto w-56"
+          role="img"
+          aria-label="QR code — scan to open the feedback survey"
           // Trusted, server-generated SVG from the qrcode library.
           dangerouslySetInnerHTML={{ __html: qrSvg }}
         />
-        <p className="break-all text-sm text-neutral-600">{surveyUrl}</p>
-      </div>
+        <p className="break-all font-mono text-sm text-muted-foreground">
+          {surveyUrl}
+        </p>
+      </Card>
     </section>
   );
 }
