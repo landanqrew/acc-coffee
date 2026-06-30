@@ -129,13 +129,13 @@ export default async function ServicesPage() {
                       <p className="mt-3 text-sm">
                         Brew{" "}
                         <span className="font-mono font-medium tabular-nums">
-                          {q.regularPots}
+                          {q.mediumPots}
                         </span>{" "}
-                        regular ·{" "}
+                        medium ·{" "}
                         <span className="font-mono font-medium tabular-nums">
-                          {q.decafPots}
+                          {q.darkPots}
                         </span>{" "}
-                        decaf (pots)
+                        dark roast (pots)
                       </p>
                     ) : (
                       <p className="mt-3 text-sm text-subtle">

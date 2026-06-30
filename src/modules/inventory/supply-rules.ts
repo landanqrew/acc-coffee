@@ -38,7 +38,8 @@ export class SupplyValidationError extends Error {
 
 /**
  * Normalizes and validates Supply input. A name is required; the minimum level,
- * when given, must be a whole number of zero or more; designation defaults off.
+ * when given, must be a number of zero or more (decimals allowed); designation
+ * defaults off.
  */
 export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
   const name = input.name?.trim() ?? "";
@@ -53,9 +54,9 @@ export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
 
   let minimumLevel: number | null = null;
   if (input.minimumLevel != null) {
-    if (!Number.isInteger(input.minimumLevel) || input.minimumLevel < 0) {
+    if (!Number.isFinite(input.minimumLevel) || input.minimumLevel < 0) {
       throw new SupplyValidationError(
-        "Minimum level must be a whole number of zero or more.",
+        "Minimum level must be zero or more.",
       );
     }
     minimumLevel = input.minimumLevel;

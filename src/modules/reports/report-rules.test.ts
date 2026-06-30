@@ -31,12 +31,12 @@ describe("answerText", () => {
 });
 
 describe("validateAnswers", () => {
-  const valid = { regularPots: "3", decafPots: "1", leftoverPots: "0", issues: "  burner flaky " };
+  const valid = { mediumPots: "3", darkPots: "1", leftoverPots: "0", issues: "  burner flaky " };
 
   it("normalizes numbers and trims free text", () => {
     expect(validateAnswers(valid)).toEqual({
-      regularPots: 3,
-      decafPots: 1,
+      mediumPots: 3,
+      darkPots: 1,
       leftoverPots: 0,
       issues: "burner flaky",
     });
@@ -48,17 +48,17 @@ describe("validateAnswers", () => {
   });
 
   it("rejects a missing required number", () => {
-    expect(() => validateAnswers({ ...valid, regularPots: "" })).toThrow(ReportValidationError);
+    expect(() => validateAnswers({ ...valid, mediumPots: "" })).toThrow(ReportValidationError);
   });
 
   it("rejects a non-whole or negative number", () => {
-    expect(() => validateAnswers({ ...valid, decafPots: "2.5" })).toThrow(ReportValidationError);
+    expect(() => validateAnswers({ ...valid, darkPots: "2.5" })).toThrow(ReportValidationError);
     expect(() => validateAnswers({ ...valid, leftoverPots: "-1" })).toThrow(ReportValidationError);
   });
 
   it("covers brew amounts, leftovers, and free-text issues", () => {
     const ids = REPORT_QUESTIONS.map((q) => q.id);
-    expect(ids).toEqual(expect.arrayContaining(["regularPots", "decafPots", "leftoverPots", "issues"]));
+    expect(ids).toEqual(expect.arrayContaining(["mediumPots", "darkPots", "leftoverPots", "issues"]));
   });
 });
 
@@ -75,9 +75,12 @@ describe("validateReportCounts", () => {
     expect(() => validateReportCounts(["a", "b"], { a: "5", b: "" })).toThrow(ReportValidationError);
   });
 
-  it("rejects a non-whole or negative count", () => {
+  it("accepts a fractional count", () => {
+    expect(validateReportCounts(["a"], { a: "1.5" })).toEqual([{ supplyId: "a", count: 1.5 }]);
+  });
+
+  it("rejects a negative count", () => {
     expect(() => validateReportCounts(["a"], { a: "-2" })).toThrow(ReportValidationError);
-    expect(() => validateReportCounts(["a"], { a: "1.5" })).toThrow(ReportValidationError);
   });
 
   it("allows no designated supplies (empty list)", () => {
@@ -89,13 +92,13 @@ describe("planReport", () => {
   const base = {
     existingReport: null,
     designatedSupplyIds: ["a"],
-    answers: { regularPots: "2", decafPots: "0", leftoverPots: "1" },
+    answers: { mediumPots: "2", darkPots: "0", leftoverPots: "1" },
     counts: { a: "4" },
   };
 
   it("returns answers and the counts to record", () => {
     expect(planReport(base)).toEqual({
-      answers: { regularPots: 2, decafPots: 0, leftoverPots: 1 },
+      answers: { mediumPots: 2, darkPots: 0, leftoverPots: 1 },
       counts: [{ supplyId: "a", count: 4 }],
     });
   });

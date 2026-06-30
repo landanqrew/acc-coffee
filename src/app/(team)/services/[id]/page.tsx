@@ -96,8 +96,8 @@ export default async function ServiceReportPage({
         ) : brewQuantities ? (
           <Card>
             <dl className="space-y-3">
-              <ReadRow label="Regular (pots)" value={brewQuantities.regularPots} />
-              <ReadRow label="Decaf (pots)" value={brewQuantities.decafPots} />
+              <ReadRow label="Medium roast (pots)" value={brewQuantities.mediumPots} />
+              <ReadRow label="Dark roast (pots)" value={brewQuantities.darkPots} />
             </dl>
           </Card>
         ) : (

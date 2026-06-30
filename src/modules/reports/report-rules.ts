@@ -5,8 +5,9 @@ import {
 
 /**
  * The fixed v1 operational question set for a Service Report. Defined in code,
- * not Lead-editable (per PRD). Numbers are whole counts of pots; `issues` is
- * optional free text for anything worth flagging.
+ * not Lead-editable (per PRD). These number answers are whole counts of pots;
+ * `issues` is optional free text. (The per-Supply Stock Counts are validated
+ * separately by `validateReportCounts` and may be fractional.)
  */
 export type ReportQuestion = {
   id: string;
@@ -16,8 +17,8 @@ export type ReportQuestion = {
 };
 
 export const REPORT_QUESTIONS: readonly ReportQuestion[] = [
-  { id: "regularPots", label: "Regular coffee brewed (pots)", kind: "number", required: true },
-  { id: "decafPots", label: "Decaf brewed (pots)", kind: "number", required: true },
+  { id: "mediumPots", label: "Medium roast brewed (pots)", kind: "number", required: true },
+  { id: "darkPots", label: "Dark roast brewed (pots)", kind: "number", required: true },
   { id: "leftoverPots", label: "Left over at the end (pots)", kind: "number", required: true },
   { id: "issues", label: "Anything to flag? (optional)", kind: "text", required: false },
 ];
@@ -99,7 +100,7 @@ export function validateReportCounts(
       return { supplyId, count: validateStockCount(n) };
     } catch (err) {
       if (err instanceof StockCountValidationError) {
-        throw new ReportValidationError("Every count must be a whole number of zero or more.");
+        throw new ReportValidationError("Every count must be zero or more.");
       }
       throw err;
     }

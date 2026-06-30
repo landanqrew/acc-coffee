@@ -56,8 +56,8 @@ describe("Brew form re-skin", () => {
   it("preserves the form contract the action depends on", () => {
     // Filing/saving must work unchanged: same field names, same hidden id.
     expect(brewForm).toContain('name="serviceId"');
-    expect(brewForm).toContain('name="regularPots"');
-    expect(brewForm).toContain('name="decafPots"');
+    expect(brewForm).toContain('name="mediumPots"');
+    expect(brewForm).toContain('name="darkPots"');
   });
 });
 

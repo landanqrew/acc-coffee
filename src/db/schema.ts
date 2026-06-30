@@ -6,6 +6,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -111,7 +112,8 @@ export const supplies = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     designated: boolean("designated").notNull().default(false),
-    minimumLevel: integer("minimumLevel"),
+    // Decimal so fractional thresholds (e.g. 1.5 bags) drive Restock Alerts.
+    minimumLevel: numeric("minimumLevel", { mode: "number" }),
     retiredAt: timestamp("retiredAt", { mode: "date" }),
     createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   },
@@ -141,7 +143,8 @@ export const stockCounts = pgTable(
     supplyId: text("supplyId")
       .notNull()
       .references(() => supplies.id, { onDelete: "cascade" }),
-    count: integer("count").notNull(),
+    // Decimal so a Stock Count can record a fractional amount on hand.
+    count: numeric("count", { mode: "number" }).notNull(),
     source: text("source", { enum: ["ad_hoc", "service_report"] })
       .notNull()
       .default("ad_hoc"),
@@ -312,8 +315,8 @@ export const runbookSections = pgTable(
 );
 
 /**
- * The brew guidance a Lead sets for a Service — how many pots of regular and
- * decaf to brew. One per Service (the `serviceId` primary key). Human-in-the-loop
+ * The brew guidance a Lead sets for a Service — how many pots of medium- and
+ * dark-roast to brew. One per Service (the `serviceId` primary key). Human-in-the-loop
  * (see CONTEXT.md): the Lead is informed by past leftover data but always sets the
  * numbers themselves; new Services default to the previous comparable Service.
  */
@@ -323,15 +326,15 @@ export const brewQuantities = pgTable(
     serviceId: text("serviceId")
       .primaryKey()
       .references(() => services.id, { onDelete: "cascade" }),
-    regularPots: integer("regularPots").notNull(),
-    decafPots: integer("decafPots").notNull(),
+    mediumPots: integer("mediumPots").notNull(),
+    darkPots: integer("darkPots").notNull(),
     updatedByUserId: text("updatedByUserId").references(() => users.id, {
       onDelete: "set null",
     }),
     updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
-    check("brew_quantity_regular_nonneg", sql`${t.regularPots} >= 0`),
-    check("brew_quantity_decaf_nonneg", sql`${t.decafPots} >= 0`),
+    check("brew_quantity_medium_nonneg", sql`${t.mediumPots} >= 0`),
+    check("brew_quantity_dark_nonneg", sql`${t.darkPots} >= 0`),
   ],
 );
