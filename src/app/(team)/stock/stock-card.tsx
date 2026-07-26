@@ -135,14 +135,14 @@ function CountSheetForm({
         name="count"
         type="number"
         min={0}
-        step={1}
-        inputMode="numeric"
+        step={0.25}
+        inputMode="decimal"
         required
         mono
         autoFocus
         defaultValue={currentCount ?? ""}
         error={state?.error}
-        help="Whole number on hand right now — the latest count wins."
+        help="On hand right now, in steps of 0.25 (e.g. 1.5 bags) — the latest count wins."
       />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : "Save count"}

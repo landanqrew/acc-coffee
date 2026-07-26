@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -111,7 +112,9 @@ export const supplies = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     designated: boolean("designated").notNull().default(false),
-    minimumLevel: integer("minimumLevel"),
+    // Quarter-unit precision (0.25) — partial bags/containers count. Quarters
+    // are exact in binary floating point, so double precision loses nothing.
+    minimumLevel: doublePrecision("minimumLevel"),
     retiredAt: timestamp("retiredAt", { mode: "date" }),
     createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   },
@@ -122,6 +125,10 @@ export const supplies = pgTable(
     check(
       "supply_minimum_level_nonneg",
       sql`${t.minimumLevel} is null or ${t.minimumLevel} >= 0`,
+    ),
+    check(
+      "supply_minimum_level_quarter_step",
+      sql`${t.minimumLevel} is null or ${t.minimumLevel} * 4 = floor(${t.minimumLevel} * 4)`,
     ),
   ],
 );
@@ -141,7 +148,8 @@ export const stockCounts = pgTable(
     supplyId: text("supplyId")
       .notNull()
       .references(() => supplies.id, { onDelete: "cascade" }),
-    count: integer("count").notNull(),
+    // Quarter-unit precision (0.25) — see the note on supply.minimumLevel.
+    count: doublePrecision("count").notNull(),
     source: text("source", { enum: ["ad_hoc", "service_report"] })
       .notNull()
       .default("ad_hoc"),
@@ -157,6 +165,10 @@ export const stockCounts = pgTable(
   },
   (t) => [
     check("stock_count_nonneg", sql`${t.count} >= 0`),
+    check(
+      "stock_count_quarter_step",
+      sql`${t.count} * 4 = floor(${t.count} * 4)`,
+    ),
     check(
       "stock_count_source",
       sql`${t.source} in ('ad_hoc', 'service_report')`,

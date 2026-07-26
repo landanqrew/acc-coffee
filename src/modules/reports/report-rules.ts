@@ -82,7 +82,7 @@ export function validateReportCounts(
       return { supplyId, count: validateStockCount(n) };
     } catch (err) {
       if (err instanceof StockCountValidationError) {
-        throw new ReportValidationError("Every count must be a whole number of zero or more.");
+        throw new ReportValidationError("Every count must be zero or more, in steps of 0.25.");
       }
       throw err;
     }

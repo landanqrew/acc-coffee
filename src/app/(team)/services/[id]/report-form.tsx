@@ -79,8 +79,8 @@ export function ReportForm({
                 label={supply.name}
                 type="number"
                 min={0}
-                step={1}
-                inputMode="numeric"
+                step={0.25}
+                inputMode="decimal"
                 required
                 mono
               />

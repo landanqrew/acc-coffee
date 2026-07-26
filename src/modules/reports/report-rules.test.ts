@@ -52,9 +52,14 @@ describe("validateReportCounts", () => {
     expect(() => validateReportCounts(["a", "b"], { a: "5", b: "" })).toThrow(ReportValidationError);
   });
 
-  it("rejects a non-whole or negative count", () => {
+  it("accepts quarter-unit counts", () => {
+    expect(validateReportCounts(["a"], { a: "1.5" })).toEqual([{ supplyId: "a", count: 1.5 }]);
+    expect(validateReportCounts(["a"], { a: 0.25 })).toEqual([{ supplyId: "a", count: 0.25 }]);
+  });
+
+  it("rejects an off-step or negative count", () => {
     expect(() => validateReportCounts(["a"], { a: "-2" })).toThrow(ReportValidationError);
-    expect(() => validateReportCounts(["a"], { a: "1.5" })).toThrow(ReportValidationError);
+    expect(() => validateReportCounts(["a"], { a: "1.1" })).toThrow(ReportValidationError);
   });
 
   it("allows no designated supplies (empty list)", () => {

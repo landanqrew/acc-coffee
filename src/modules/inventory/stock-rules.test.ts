@@ -38,9 +38,17 @@ describe("validateStockCount", () => {
     expect(validateStockCount(42)).toBe(42);
   });
 
-  it("rejects negative, fractional, or NaN counts", () => {
+  it("accepts quarter-unit counts", () => {
+    expect(validateStockCount(0.25)).toBe(0.25);
+    expect(validateStockCount(1.5)).toBe(1.5);
+    expect(validateStockCount(3.75)).toBe(3.75);
+  });
+
+  it("rejects negative, off-step, or NaN counts", () => {
     expect(() => validateStockCount(-1)).toThrow(StockCountValidationError);
-    expect(() => validateStockCount(3.5)).toThrow(StockCountValidationError);
+    expect(() => validateStockCount(-0.25)).toThrow(StockCountValidationError);
+    expect(() => validateStockCount(3.1)).toThrow(StockCountValidationError);
+    expect(() => validateStockCount(0.125)).toThrow(StockCountValidationError);
     expect(() => validateStockCount(Number("x"))).toThrow(StockCountValidationError);
   });
 });

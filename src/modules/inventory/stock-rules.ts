@@ -18,11 +18,15 @@ export class StockCountValidationError extends Error {
   }
 }
 
-/** Validates an observed count: a whole number of zero or more. */
+/**
+ * Validates an observed count: zero or more, in quarter-unit steps (0.25) so
+ * partial bags and containers can be counted. Quarters are exact in binary
+ * floating point, so `count * 4` being an integer is a sound step check.
+ */
 export function validateStockCount(count: number): number {
-  if (!Number.isInteger(count) || count < 0) {
+  if (!Number.isInteger(count * 4) || count < 0) {
     throw new StockCountValidationError(
-      "A stock count must be a whole number of zero or more.",
+      "A stock count must be zero or more, in steps of 0.25.",
     );
   }
   return count;
