@@ -111,6 +111,8 @@ export const supplies = pgTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
+    // Free-text unit of measure (e.g. "bags", "lbs"); null reads as a bare number.
+    unit: text("unit"),
     designated: boolean("designated").notNull().default(false),
     // Decimal so fractional thresholds (e.g. 1.5 bags) drive Restock Alerts.
     minimumLevel: numeric("minimumLevel", { mode: "number" }),
@@ -121,6 +123,7 @@ export const supplies = pgTable(
     // Mirror the app-level validation at the database so direct SQL can't break
     // the invariants the inventory module relies on.
     check("supply_name_length", sql`char_length(${t.name}) <= 100`),
+    check("supply_unit_length", sql`char_length(${t.unit}) <= 30`),
     check(
       "supply_minimum_level_nonneg",
       sql`${t.minimumLevel} is null or ${t.minimumLevel} >= 0`,
@@ -130,8 +133,9 @@ export const supplies = pgTable(
 
 /**
  * An observed Stock Count for a Supply — the inventory snapshot mechanism (see
- * ADR-0001). Counts are never edited or deleted; the latest count (by
- * `countedAt`) is the Supply's current level. `source` records whether the count
+ * ADR-0001). Counts are never deleted, and only a Service Report's own counts
+ * can be corrected (by editing that Report); the latest count (by `countedAt`)
+ * is the Supply's current level. `source` records whether the count
  * came from an ad-hoc update or a Service Report.
  */
 export const stockCounts = pgTable(
@@ -228,7 +232,8 @@ export const services = pgTable(
  * A filed Service Report — the weekly ritual after a Service. Holds the fixed
  * operational answers (`answers`, keyed by the in-code question set) and is the
  * vehicle for Stock Counts: its rows in `stock_count` carry the designated
- * Supply counts. A Service has at most one Report (unique `serviceId`).
+ * Supply counts. A Service has at most one Report (unique `serviceId`). A filed
+ * Report can be edited and re-submitted; `editedAt` records the latest edit.
  */
 export const reports = pgTable("service_report", {
   id: text("id")
@@ -243,6 +248,7 @@ export const reports = pgTable("service_report", {
   }),
   answers: jsonb("answers").$type<ReportAnswers>().notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  editedAt: timestamp("editedAt", { mode: "date" }),
 });
 
 /**

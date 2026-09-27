@@ -38,10 +38,15 @@ export interface FieldProps
   error?: string;
   /** Optional helper text shown under the input when there is no error. */
   help?: string;
+  /** Short trailing adornment inside the input, e.g. a unit ("bags"). */
+  suffix?: string;
 }
 
 export const Field = React.forwardRef<HTMLInputElement, FieldProps>(
-  function Field({ label, error, help, mono, className, id, ...props }, ref) {
+  function Field(
+    { label, error, help, suffix, mono, className, id, style, ...props },
+    ref,
+  ) {
     const reactId = React.useId();
     const inputId = id ?? reactId;
     const describedById = error
@@ -55,17 +60,33 @@ export const Field = React.forwardRef<HTMLInputElement, FieldProps>(
         <label htmlFor={inputId} className={FIELD_LABEL_CLS}>
           {label}
         </label>
-        <input
-          ref={ref}
-          id={inputId}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={describedById}
-          className={cn(
-            fieldInputVariants({ mono, invalid: Boolean(error) }),
-            className,
+        <div className="relative">
+          <input
+            ref={ref}
+            id={inputId}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedById}
+            className={cn(
+              fieldInputVariants({ mono, invalid: Boolean(error) }),
+              className,
+            )}
+            // Reserve room so typed digits never slide under the suffix.
+            style={
+              suffix
+                ? { paddingRight: `calc(${suffix.length}ch + 1.5rem)`, ...style }
+                : style
+            }
+            {...props}
+          />
+          {suffix && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+            >
+              {suffix}
+            </span>
           )}
-          {...props}
-        />
+        </div>
         {error ? (
           <p
             id={`${inputId}-error`}

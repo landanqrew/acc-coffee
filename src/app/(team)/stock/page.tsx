@@ -32,6 +32,7 @@ export default async function StockPage() {
               <StockCard
                 supplyId={level.supply.id}
                 name={level.supply.name}
+                unit={level.supply.unit}
                 currentCount={level.currentCount}
                 minimumLevel={level.supply.minimumLevel}
                 status={stockStatus(level)}

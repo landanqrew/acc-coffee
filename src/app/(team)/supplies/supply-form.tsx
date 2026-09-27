@@ -53,6 +53,16 @@ export function SupplyForm({
       />
 
       <Field
+        label="Unit"
+        name="unit"
+        type="text"
+        maxLength={30}
+        defaultValue={supply?.unit ?? ""}
+        placeholder="e.g. bags, lbs, sleeves"
+        help="What a count of this supply is measured in. Optional."
+      />
+
+      <Field
         label="Minimum level"
         name="minimumLevel"
         type="number"
@@ -62,7 +72,7 @@ export function SupplyForm({
         mono
         defaultValue={supply?.minimumLevel ?? ""}
         placeholder="none"
-        help="A Restock Alert fires when stock drops below this. Leave blank for no minimum."
+        help="A Restock Alert fires when stock drops below this. Decimals OK. Leave blank for no minimum."
       />
 
       <label className="flex items-center gap-2 text-sm text-foreground">

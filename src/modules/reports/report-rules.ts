@@ -131,3 +131,18 @@ export function planReport(input: {
   const counts = validateReportCounts(input.designatedSupplyIds, input.counts);
   return { answers, counts };
 }
+
+/**
+ * Pure decision for re-submitting an edited Report. The counts to correct are
+ * the ones the Report originally recorded (a Supply designated after filing
+ * isn't retro-added), and each must still be present and valid.
+ */
+export function planReportEdit(input: {
+  recordedSupplyIds: readonly string[];
+  answers: Record<string, unknown>;
+  counts: Record<string, unknown>;
+}): ReportPlan {
+  const answers = validateAnswers(input.answers);
+  const counts = validateReportCounts(input.recordedSupplyIds, input.counts);
+  return { answers, counts };
+}

@@ -85,6 +85,13 @@
       "when": 1782742256478,
       "tag": "0011_decimal_inventory_and_roast",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790520389732,
+      "tag": "0012_supply_unit_and_report_edit",
+      "breakpoints": true
     }
   ]
 }

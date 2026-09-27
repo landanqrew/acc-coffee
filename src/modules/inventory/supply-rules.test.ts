@@ -12,6 +12,7 @@ describe("validateSupplyInput", () => {
   it("trims the name and defaults designation off with no minimum", () => {
     expect(validateSupplyInput({ name: "  Oat Milk  " })).toEqual({
       name: "Oat Milk",
+      unit: null,
       designated: false,
       minimumLevel: null,
     });
@@ -20,7 +21,7 @@ describe("validateSupplyInput", () => {
   it("keeps the designated flag and a valid minimum level", () => {
     expect(
       validateSupplyInput({ name: "Cups", designated: true, minimumLevel: 50 }),
-    ).toEqual({ name: "Cups", designated: true, minimumLevel: 50 });
+    ).toEqual({ name: "Cups", unit: null, designated: true, minimumLevel: 50 });
   });
 
   it("allows a zero minimum level", () => {
@@ -52,6 +53,19 @@ describe("validateSupplyInput", () => {
     );
   });
 
+  it("trims the unit and treats a blank one as no unit", () => {
+    expect(validateSupplyInput({ name: "Beans", unit: "  bags " }).unit).toBe("bags");
+    expect(validateSupplyInput({ name: "Beans", unit: "   " }).unit).toBeNull();
+    expect(validateSupplyInput({ name: "Beans", unit: null }).unit).toBeNull();
+  });
+
+  it("accepts a 30-character unit but rejects 31", () => {
+    expect(validateSupplyInput({ name: "Cups", unit: "a".repeat(30) }).unit).toHaveLength(30);
+    expect(() => validateSupplyInput({ name: "Cups", unit: "a".repeat(31) })).toThrow(
+      SupplyValidationError,
+    );
+  });
+
   it("accepts a 100-character name but rejects 101", () => {
     expect(validateSupplyInput({ name: "a".repeat(100) }).name).toHaveLength(100);
     expect(() => validateSupplyInput({ name: "a".repeat(101) })).toThrow(
@@ -75,7 +89,7 @@ describe("assertCanManageSupplies", () => {
 });
 
 describe("active vs retired", () => {
-  const active = { id: "1", name: "Cups", designated: true, minimumLevel: 10, retiredAt: null, createdAt: new Date() };
+  const active = { id: "1", name: "Cups", unit: null, designated: true, minimumLevel: 10, retiredAt: null, createdAt: new Date() };
   const retired = { ...active, id: "2", name: "Old Syrup", retiredAt: new Date() };
 
   it("counts a Supply as active until it is retired", () => {

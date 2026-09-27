@@ -11,13 +11,14 @@ import {
 
 export type SupplyFormState = { error?: string; ok?: string } | undefined;
 
-/** Parses the shared Supply form fields (name, designated checkbox, minimum). */
+/** Parses the shared Supply form fields (name, unit, designated checkbox, minimum). */
 function readSupplyForm(formData: FormData) {
   const name = String(formData.get("name") ?? "");
+  const unit = String(formData.get("unit") ?? "");
   const designated = formData.get("designated") === "on";
   const rawMinimum = String(formData.get("minimumLevel") ?? "").trim();
   const minimumLevel = rawMinimum === "" ? null : Number(rawMinimum);
-  return { name, designated, minimumLevel };
+  return { name, unit, designated, minimumLevel };
 }
 
 export async function createSupplyAction(
