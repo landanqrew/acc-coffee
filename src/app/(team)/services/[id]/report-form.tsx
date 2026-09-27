@@ -45,7 +45,7 @@ export function ReportForm({
               inputMode="numeric"
               required={q.required}
               mono
-              defaultValue="0"
+              defaultValue={state?.values?.[q.id] ?? "0"}
             />
           ) : (
             <div key={q.id} className="block">
@@ -60,6 +60,7 @@ export function ReportForm({
                 name={q.id}
                 rows={2}
                 required={q.required}
+                defaultValue={state?.values?.[q.id]}
                 className={cn(fieldInputVariants(), "resize-y")}
               />
             </div>
@@ -83,6 +84,7 @@ export function ReportForm({
                 inputMode="decimal"
                 required
                 mono
+                defaultValue={state?.values?.[`count_${supply.id}`]}
               />
             ))}
           </div>
