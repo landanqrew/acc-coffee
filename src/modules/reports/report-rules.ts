@@ -43,6 +43,17 @@ export function answerText(value: unknown): string {
   return JSON.stringify(value);
 }
 
+/**
+ * Whether a thrown DB error is a Postgres unique-constraint violation (23505).
+ * Drizzle wraps query errors in a DrizzleQueryError with the driver error as
+ * `cause`, so check both levels.
+ */
+export function isUniqueViolation(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  if ((err as { code?: unknown }).code === "23505") return true;
+  return "cause" in err && isUniqueViolation(err.cause);
+}
+
 /** A caller-facing problem with a Report submission. */
 export class ReportValidationError extends Error {
   constructor(message: string) {
@@ -92,6 +103,12 @@ export function validateReportCounts(
 ): { supplyId: string; count: number }[] {
   return designatedSupplyIds.map((supplyId) => {
     const raw = rawCounts[supplyId];
+    // No field at all means the form predates this Supply being designated.
+    if (!(supplyId in rawCounts)) {
+      throw new ReportValidationError(
+        "The supply list changed since you opened this form. Count the new supplies and file again.",
+      );
+    }
     if (raw === undefined || raw === null || String(raw).trim() === "") {
       throw new ReportValidationError("Every designated supply must be counted.");
     }

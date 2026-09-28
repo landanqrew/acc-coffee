@@ -5,6 +5,7 @@ import { sendRestockAlert } from "@/lib/email";
 import { getChurchAdminEmail } from "@/modules/settings/settings";
 import {
   buildStockLevels,
+  latestCount,
   StockCountValidationError,
   validateStockCount,
   type StockCount,
@@ -29,7 +30,7 @@ export type RecordStockCountInput = {
  * address or a send failure must never fail the underlying count, which is the
  * source of truth.
  */
-async function dispatchRestockAlert(alert: RestockAlert): Promise<void> {
+export async function dispatchRestockAlert(alert: RestockAlert): Promise<void> {
   try {
     const to = await getChurchAdminEmail();
     if (!to) return;
@@ -81,6 +82,26 @@ export async function recordStockCount(
   if (alert) await dispatchRestockAlert(alert);
 
   return row;
+}
+
+/**
+ * Each Supply's current (last-count-wins) count, keyed by Supply id. Supplies
+ * that have never been counted are absent.
+ */
+export async function getCurrentCounts(
+  supplyIds: readonly string[],
+): Promise<Map<string, number>> {
+  if (supplyIds.length === 0) return new Map();
+  const counts = await db.query.stockCounts.findMany({
+    columns: { id: true, supplyId: true, count: true, countedAt: true },
+    where: inArray(stockCounts.supplyId, [...supplyIds]),
+  });
+  const current = new Map<string, number>();
+  for (const supplyId of supplyIds) {
+    const latest = latestCount(counts.filter((c) => c.supplyId === supplyId));
+    if (latest) current.set(supplyId, latest.count);
+  }
+  return current;
 }
 
 /**

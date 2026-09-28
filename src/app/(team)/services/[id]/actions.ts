@@ -38,7 +38,13 @@ export async function setBrewQuantitiesAction(
   }
 }
 
-export type ReportFormState = { error?: string; ok?: string } | undefined;
+/**
+ * `values` echoes the submitted fields back on an error so the form can refill
+ * them — React resets a form after its action runs, even when it fails.
+ */
+export type ReportFormState =
+  | { error?: string; ok?: string; values?: Record<string, string> }
+  | undefined;
 
 export async function fileReportAction(
   _prev: ReportFormState,
@@ -47,16 +53,21 @@ export async function fileReportAction(
   const user = await requireSession();
   const serviceId = String(formData.get("serviceId") ?? "");
 
+  const values: Record<string, string> = {};
   const answers: Record<string, unknown> = {};
   for (const q of REPORT_QUESTIONS) {
-    answers[q.id] = formData.get(q.id);
+    const value = formData.get(q.id);
+    answers[q.id] = value;
+    if (typeof value === "string") values[q.id] = value;
   }
 
   // Counts arrive as count_<supplyId> fields; key them by supply id. fileReport
   // loads the designated Supplies and rejects any that are missing here.
   const counts: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
-    if (key.startsWith("count_")) counts[key.slice("count_".length)] = value;
+    if (!key.startsWith("count_")) continue;
+    counts[key.slice("count_".length)] = value;
+    if (typeof value === "string") values[key] = value;
   }
 
   try {
@@ -71,8 +82,13 @@ export async function fileReportAction(
     revalidatePath("/stock");
     return { ok: "Report filed." };
   } catch (err) {
-    if (err instanceof ReportValidationError) return { error: err.message };
+    if (err instanceof ReportValidationError) {
+      // Re-render with fresh data so a newly designated Supply gets its field,
+      // or a Report someone else just filed replaces the form.
+      revalidatePath(`/services/${serviceId}`);
+      return { error: err.message, values };
+    }
     console.error("Failed to file report:", err);
-    return { error: "Couldn't file the report. Please try again." };
+    return { error: "Couldn't file the report. Please try again.", values };
   }
 }
