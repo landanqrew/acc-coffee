@@ -5,6 +5,7 @@ import { sendRestockAlert } from "@/lib/email";
 import { getChurchAdminEmail } from "@/modules/settings/settings";
 import {
   buildStockLevels,
+  latestCount,
   StockCountValidationError,
   validateStockCount,
   type StockCount,
@@ -29,7 +30,7 @@ export type RecordStockCountInput = {
  * address or a send failure must never fail the underlying count, which is the
  * source of truth.
  */
-async function dispatchRestockAlert(alert: RestockAlert): Promise<void> {
+export async function dispatchRestockAlert(alert: RestockAlert): Promise<void> {
   try {
     const to = await getChurchAdminEmail();
     if (!to) return;
@@ -84,55 +85,67 @@ export async function recordStockCount(
 }
 
 /**
- * Corrects the Stock Count a Service Report recorded for a Supply, in place —
- * the one sanctioned edit to a count (see ADR-0001's amendment). `countedAt` is
- * kept, so any later count still wins. When the corrected row is the Supply's
- * current level and the correction newly crosses below the minimum, a Restock
- * Alert fires just as it would for a fresh count.
+ * Each Supply's current (last-count-wins) count, keyed by Supply id. Supplies
+ * that have never been counted are absent.
  */
-export async function correctReportStockCount(input: {
-  reportId: string;
-  supplyId: string;
-  count: number;
-}): Promise<void> {
-  const count = validateStockCount(input.count);
-
-  const existing = await db.query.stockCounts.findFirst({
-    where: and(
-      eq(stockCounts.reportId, input.reportId),
-      eq(stockCounts.supplyId, input.supplyId),
-    ),
-    columns: { id: true, count: true },
+export async function getCurrentCounts(
+  supplyIds: readonly string[],
+): Promise<Map<string, number>> {
+  if (supplyIds.length === 0) return new Map();
+  const counts = await db.query.stockCounts.findMany({
+    columns: { id: true, supplyId: true, count: true, countedAt: true },
+    where: inArray(stockCounts.supplyId, [...supplyIds]),
   });
-  if (!existing) {
-    throw new StockCountValidationError("That count is no longer on the report.");
+  const current = new Map<string, number>();
+  for (const supplyId of supplyIds) {
+    const latest = latestCount(counts.filter((c) => c.supplyId === supplyId));
+    if (latest) current.set(supplyId, latest.count);
   }
-  if (existing.count === count) return;
+  return current;
+}
 
-  await db
-    .update(stockCounts)
-    .set({ count })
-    .where(eq(stockCounts.id, existing.id));
+/** A Service Report's Stock Count corrected in place (see ADR-0001's amendment). */
+export type CountCorrection = {
+  countId: string;
+  supplyId: string;
+  previousCount: number;
+  newCount: number;
+};
 
-  const latest = await db.query.stockCounts.findFirst({
-    where: eq(stockCounts.supplyId, input.supplyId),
-    columns: { id: true },
-    orderBy: [desc(stockCounts.countedAt), desc(stockCounts.id)],
+/**
+ * Sends Restock Alerts for Report count corrections once they have committed.
+ * A correction alerts only when its row is still the Supply's current level
+ * (a later count wins) and it newly crosses below an active Supply's minimum.
+ */
+export async function alertOnCorrectedCounts(
+  corrections: readonly CountCorrection[],
+): Promise<void> {
+  if (corrections.length === 0) return;
+  const supplyIds = corrections.map((c) => c.supplyId);
+  const [counts, supplyRows] = await Promise.all([
+    db.query.stockCounts.findMany({
+      columns: { id: true, supplyId: true, count: true, countedAt: true },
+      where: inArray(stockCounts.supplyId, supplyIds),
+    }),
+    db.query.supplies.findMany({
+      columns: { id: true, name: true, minimumLevel: true },
+      where: and(inArray(supplies.id, supplyIds), isNull(supplies.retiredAt)),
+    }),
+  ]);
+  const supplyById = new Map(supplyRows.map((s) => [s.id, s]));
+
+  const alerts = corrections.flatMap((c) => {
+    const supply = supplyById.get(c.supplyId);
+    const latest = latestCount(counts.filter((x) => x.supplyId === c.supplyId));
+    if (!supply || latest?.id !== c.countId) return [];
+    const alert = decideRestockAlert({
+      supply,
+      previousCount: c.previousCount,
+      newCount: c.newCount,
+    });
+    return alert ? [alert] : [];
   });
-  if (latest?.id !== existing.id) return;
-
-  const supply = await db.query.supplies.findFirst({
-    where: and(eq(supplies.id, input.supplyId), isNull(supplies.retiredAt)),
-    columns: { id: true, name: true, minimumLevel: true },
-  });
-  if (!supply) return;
-
-  const alert = decideRestockAlert({
-    supply,
-    previousCount: existing.count,
-    newCount: count,
-  });
-  if (alert) await dispatchRestockAlert(alert);
+  await Promise.all(alerts.map(dispatchRestockAlert));
 }
 
 /**

@@ -52,14 +52,17 @@ export function ReportForm({
   const [editing, setEditing] = useState(!filed);
   // Bumped on Cancel to remount the form, restoring every field's default.
   const [resetKey, setResetKey] = useState(0);
+  // Submitted values echoed back on an error — React resets a form after its
+  // action runs, even when it fails — so the fields refill. Cancel drops them.
+  const [refill, setRefill] = useState<Record<string, string>>();
   const locked = !editing;
 
   // `filed` is fixed per mount: the page re-keys the form once a Report lands.
   const [state, action, pending] = useActionState<ReportFormState, FormData>(
     async (prev, formData) => {
-      if (!filed) return fileReportAction(prev, formData);
-      const result = await editReportAction(prev, formData);
-      if (result?.ok) setEditing(false);
+      const result = await (filed ? editReportAction : fileReportAction)(prev, formData);
+      setRefill(result?.values);
+      if (filed && result?.ok) setEditing(false);
       return result;
     },
     undefined,
@@ -67,6 +70,7 @@ export function ReportForm({
 
   function cancelEdit() {
     setEditing(false);
+    setRefill(undefined);
     setResetKey((k) => k + 1);
   }
 
@@ -104,7 +108,7 @@ export function ReportForm({
               required={q.required}
               readOnly={locked}
               mono
-              defaultValue={filed ? answerDefault(answers[q.id]) : "0"}
+              defaultValue={refill?.[q.id] ?? (filed ? answerDefault(answers[q.id]) : "0")}
               help={locked ? undefined : "Whole number"}
               className={LOCKED_CLS}
             />
@@ -122,7 +126,7 @@ export function ReportForm({
                 rows={2}
                 required={q.required}
                 readOnly={locked}
-                defaultValue={filed ? answerDefault(answers[q.id]) : ""}
+                defaultValue={refill?.[q.id] ?? (filed ? answerDefault(answers[q.id]) : "")}
                 placeholder={locked ? "Nothing flagged" : undefined}
                 className={cn(fieldInputVariants(), "resize-y", LOCKED_CLS)}
               />
@@ -152,7 +156,7 @@ export function ReportForm({
                 mono
                 suffix={row.unit ?? undefined}
                 placeholder="0.0"
-                defaultValue={row.count ?? ""}
+                defaultValue={refill?.[`count_${row.supplyId}`] ?? row.count ?? ""}
                 help={locked ? undefined : "Decimals OK — e.g. 1.5"}
                 className={LOCKED_CLS}
               />

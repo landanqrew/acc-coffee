@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   answerText,
+  isUniqueViolation,
   planReport,
   planReportEdit,
   REPORT_QUESTIONS,
@@ -74,6 +75,14 @@ describe("validateReportCounts", () => {
   it("rejects when any designated supply is uncounted", () => {
     expect(() => validateReportCounts(["a", "b"], { a: "5" })).toThrow(ReportValidationError);
     expect(() => validateReportCounts(["a", "b"], { a: "5", b: "" })).toThrow(ReportValidationError);
+  });
+
+  it("tells a stale form apart from a blank count", () => {
+    // A missing field means the Supply was designated after the form loaded.
+    expect(() => validateReportCounts(["a", "b"], { a: "5" })).toThrow(/supply list changed/);
+    expect(() => validateReportCounts(["a", "b"], { a: "5", b: " " })).toThrow(
+      "Every designated supply must be counted.",
+    );
   });
 
   it("accepts a fractional count", () => {
@@ -151,5 +160,23 @@ describe("planReportEdit", () => {
 
   it("allows editing a report that recorded no counts", () => {
     expect(planReportEdit({ ...base, recordedSupplyIds: [], counts: {} }).counts).toEqual([]);
+  });
+});
+
+describe("isUniqueViolation", () => {
+  it("matches a raw driver error", () => {
+    expect(isUniqueViolation({ code: "23505" })).toBe(true);
+  });
+
+  it("matches a driver error wrapped as a cause", () => {
+    // Drizzle wraps query errors in a DrizzleQueryError carrying the driver error.
+    const wrapped = new Error("Failed query", { cause: { code: "23505" } });
+    expect(isUniqueViolation(wrapped)).toBe(true);
+  });
+
+  it("ignores other errors", () => {
+    expect(isUniqueViolation({ code: "23503" })).toBe(false);
+    expect(isUniqueViolation(new Error("boom"))).toBe(false);
+    expect(isUniqueViolation(null)).toBe(false);
   });
 });

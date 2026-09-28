@@ -2,11 +2,15 @@ import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { reports, services, stockCounts, supplies } from "@/db/schema";
 import {
-  correctReportStockCount,
-  recordStockCount,
+  alertOnCorrectedCounts,
+  dispatchRestockAlert,
+  getCurrentCounts,
+  type CountCorrection,
 } from "@/modules/inventory/stock";
+import { decideRestockAlert } from "@/modules/inventory/restock-rules";
 import type { Supply } from "@/modules/inventory/supply";
 import {
+  isUniqueViolation,
   planReport,
   planReportEdit,
   ReportValidationError,
@@ -37,16 +41,6 @@ export type ReportCount = {
 /** A Report plus the counts it recorded — the per-Service report view. */
 export type ReportDetail = { report: Report; counts: ReportCount[] };
 
-/** Whether a thrown DB error is a Postgres unique-constraint violation (23505). */
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: unknown }).code === "23505"
-  );
-}
-
 /** Active Supplies designated for counting on every Service Report, alphabetized. */
 export async function listDesignatedSupplies(): Promise<Supply[]> {
   return db.query.supplies.findMany({
@@ -66,11 +60,12 @@ export async function getReportForService(serviceId: string): Promise<Report | n
 /**
  * Files a Service Report: validates the operational answers and that every
  * designated Supply is counted, enforces one Report per Service, then persists
- * the Report and pushes each count into inventory (source `service_report`,
+ * the Report and its counts into inventory (source `service_report`,
  * last-count-wins) linked back to the Report.
  *
- * (neon-http has no transactions; answers/counts are fully validated before any
- * write, so a partial failure is the only — narrow — non-atomic window.)
+ * The Report and its counts are written in one atomic batch, so a failure never
+ * leaves a Report with missing counts. Restock Alerts go out only after that
+ * write commits, in parallel and best-effort.
  */
 export async function fileReport(input: {
   serviceId: string;
@@ -98,16 +93,34 @@ export async function fileReport(input: {
     counts: input.counts,
   });
 
+  // The levels before this Report, to detect fresh crossings below a minimum.
+  const previousCounts = await getCurrentCounts(plan.counts.map((c) => c.supplyId));
+
+  const reportId = crypto.randomUUID();
+  const filedByUserId = input.filedByUserId ?? null;
+  const insertReport = db
+    .insert(reports)
+    .values({ id: reportId, serviceId: input.serviceId, filedByUserId, answers: plan.answers })
+    .returning();
+
   let report: Report;
   try {
-    [report] = await db
-      .insert(reports)
-      .values({
-        serviceId: input.serviceId,
-        filedByUserId: input.filedByUserId ?? null,
-        answers: plan.answers,
-      })
-      .returning();
+    const [[inserted]] =
+      plan.counts.length === 0
+        ? await db.batch([insertReport])
+        : await db.batch([
+            insertReport,
+            db.insert(stockCounts).values(
+              plan.counts.map((c) => ({
+                supplyId: c.supplyId,
+                count: c.count,
+                source: "service_report" as const,
+                recordedByUserId: filedByUserId,
+                reportId,
+              })),
+            ),
+          ]);
+    report = inserted;
   } catch (err) {
     // A concurrent submission can slip past the app-level check above and lose
     // the race to the unique(serviceId) constraint — translate that to the same
@@ -118,27 +131,26 @@ export async function fileReport(input: {
     throw err;
   }
 
-  // Push each count through the inventory path so it lands as a Stock Count
-  // (last-count-wins) and fires a Restock Alert on a fresh crossing, exactly
-  // like an ad-hoc count.
-  for (const c of plan.counts) {
-    await recordStockCount({
-      supplyId: c.supplyId,
-      count: c.count,
-      source: "service_report",
-      recordedByUserId: input.filedByUserId ?? null,
-      reportId: report.id,
+  const supplyById = new Map(designated.map((s) => [s.id, s]));
+  const alerts = plan.counts.flatMap((c) => {
+    const alert = decideRestockAlert({
+      supply: supplyById.get(c.supplyId)!,
+      previousCount: previousCounts.get(c.supplyId) ?? null,
+      newCount: c.count,
     });
-  }
+    return alert ? [alert] : [];
+  });
+  await Promise.all(alerts.map(dispatchRestockAlert));
 
   return report;
 }
 
 /**
  * Re-submits an edited Report: re-validates the answers and the counts it
- * originally recorded, overwrites the answers, and corrects each recorded
- * Stock Count in place (see `correctReportStockCount`). Any team member may
- * edit. Same narrow non-atomic window as `fileReport`.
+ * originally recorded, then overwrites the answers and corrects each changed
+ * Stock Count in place (`countedAt` kept — see ADR-0001's amendment). Any team
+ * member may edit. The writes go in one atomic batch; Restock Alerts follow
+ * once it commits, as with `fileReport`.
  */
 export async function editReport(input: {
   serviceId: string;
@@ -152,7 +164,7 @@ export async function editReport(input: {
 
   const recorded = await db.query.stockCounts.findMany({
     where: eq(stockCounts.reportId, existing.id),
-    columns: { supplyId: true },
+    columns: { id: true, supplyId: true, count: true },
   });
   const plan = planReportEdit({
     recordedSupplyIds: recorded.map((c) => c.supplyId),
@@ -160,16 +172,31 @@ export async function editReport(input: {
     counts: input.counts,
   });
 
-  const [report] = await db
-    .update(reports)
-    .set({ answers: plan.answers, editedAt: new Date() })
-    .where(eq(reports.id, existing.id))
-    .returning();
+  const recordedBySupply = new Map(recorded.map((c) => [c.supplyId, c]));
+  const corrections: CountCorrection[] = plan.counts.flatMap((c) => {
+    const row = recordedBySupply.get(c.supplyId)!;
+    return row.count === c.count
+      ? []
+      : [{ countId: row.id, supplyId: c.supplyId, previousCount: row.count, newCount: c.count }];
+  });
 
-  for (const c of plan.counts) {
-    await correctReportStockCount({ reportId: report.id, ...c });
+  const [[report]] = await db.batch([
+    db
+      .update(reports)
+      .set({ answers: plan.answers, editedAt: new Date() })
+      .where(eq(reports.id, existing.id))
+      .returning(),
+    ...corrections.map((c) =>
+      db.update(stockCounts).set({ count: c.newCount }).where(eq(stockCounts.id, c.countId)),
+    ),
+  ]);
+
+  // The edit has committed; a failed alert lookup must not report it as failed.
+  try {
+    await alertOnCorrectedCounts(corrections);
+  } catch (err) {
+    console.error("Failed to check restock alerts for an edited report:", err);
   }
-
   return report;
 }
 

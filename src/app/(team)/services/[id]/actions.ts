@@ -39,25 +39,36 @@ export async function setBrewQuantitiesAction(
   }
 }
 
-export type ReportFormState = { error?: string; ok?: string } | undefined;
+/**
+ * `values` echoes the submitted fields back on an error so the form can refill
+ * them — React resets a form after its action runs, even when it fails.
+ */
+export type ReportFormState =
+  | { error?: string; ok?: string; values?: Record<string, string> }
+  | undefined;
 
 /** Reads the Report form's answers (by question id) and counts (count_<supplyId>). */
 function readReportForm(formData: FormData) {
   const serviceId = String(formData.get("serviceId") ?? "");
 
+  const values: Record<string, string> = {};
   const answers: Record<string, unknown> = {};
   for (const q of REPORT_QUESTIONS) {
-    answers[q.id] = formData.get(q.id);
+    const value = formData.get(q.id);
+    answers[q.id] = value;
+    if (typeof value === "string") values[q.id] = value;
   }
 
   // Counts arrive as count_<supplyId> fields; key them by supply id. The domain
   // call loads the Supplies it expects and rejects any that are missing here.
   const counts: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
-    if (key.startsWith("count_")) counts[key.slice("count_".length)] = value;
+    if (!key.startsWith("count_")) continue;
+    counts[key.slice("count_".length)] = value;
+    if (typeof value === "string") values[key] = value;
   }
 
-  return { serviceId, answers, counts };
+  return { serviceId, answers, counts, values };
 }
 
 function revalidateReportViews(serviceId: string) {
@@ -71,7 +82,7 @@ export async function fileReportAction(
   formData: FormData,
 ): Promise<ReportFormState> {
   const user = await requireSession();
-  const { serviceId, answers, counts } = readReportForm(formData);
+  const { serviceId, answers, counts, values } = readReportForm(formData);
 
   try {
     await fileReport({
@@ -83,9 +94,14 @@ export async function fileReportAction(
     revalidateReportViews(serviceId);
     return { ok: "Report filed." };
   } catch (err) {
-    if (err instanceof ReportValidationError) return { error: err.message };
+    if (err instanceof ReportValidationError) {
+      // Re-render with fresh data so a newly designated Supply gets its field,
+      // or a Report someone else just filed replaces the form.
+      revalidatePath(`/services/${serviceId}`);
+      return { error: err.message, values };
+    }
     console.error("Failed to file report:", err);
-    return { error: "Couldn't file the report. Please try again." };
+    return { error: "Couldn't file the report. Please try again.", values };
   }
 }
 
@@ -94,15 +110,15 @@ export async function editReportAction(
   formData: FormData,
 ): Promise<ReportFormState> {
   await requireSession();
-  const { serviceId, answers, counts } = readReportForm(formData);
+  const { serviceId, answers, counts, values } = readReportForm(formData);
 
   try {
     await editReport({ serviceId, answers, counts });
     revalidateReportViews(serviceId);
     return { ok: "Report updated." };
   } catch (err) {
-    if (err instanceof ReportValidationError) return { error: err.message };
+    if (err instanceof ReportValidationError) return { error: err.message, values };
     console.error("Failed to edit report:", err);
-    return { error: "Couldn't save the report. Please try again." };
+    return { error: "Couldn't save the report. Please try again.", values };
   }
 }
