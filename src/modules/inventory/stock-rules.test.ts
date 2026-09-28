@@ -14,6 +14,7 @@ function supply(over: Partial<Supply> = {}): Supply {
   return {
     id: "s1",
     name: "Cups",
+    unit: null,
     designated: true,
     minimumLevel: 10,
     retiredAt: null,

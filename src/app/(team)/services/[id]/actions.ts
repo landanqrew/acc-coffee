@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireLead, requireSession } from "@/lib/dal";
 import {
+  editReport,
   fileReport,
   REPORT_QUESTIONS,
   ReportValidationError,
@@ -46,11 +47,8 @@ export type ReportFormState =
   | { error?: string; ok?: string; values?: Record<string, string> }
   | undefined;
 
-export async function fileReportAction(
-  _prev: ReportFormState,
-  formData: FormData,
-): Promise<ReportFormState> {
-  const user = await requireSession();
+/** Reads the Report form's answers (by question id) and counts (count_<supplyId>). */
+function readReportForm(formData: FormData) {
   const serviceId = String(formData.get("serviceId") ?? "");
 
   const values: Record<string, string> = {};
@@ -61,14 +59,30 @@ export async function fileReportAction(
     if (typeof value === "string") values[q.id] = value;
   }
 
-  // Counts arrive as count_<supplyId> fields; key them by supply id. fileReport
-  // loads the designated Supplies and rejects any that are missing here.
+  // Counts arrive as count_<supplyId> fields; key them by supply id. The domain
+  // call loads the Supplies it expects and rejects any that are missing here.
   const counts: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("count_")) continue;
     counts[key.slice("count_".length)] = value;
     if (typeof value === "string") values[key] = value;
   }
+
+  return { serviceId, answers, counts, values };
+}
+
+function revalidateReportViews(serviceId: string) {
+  revalidatePath(`/services/${serviceId}`);
+  revalidatePath("/services");
+  revalidatePath("/stock");
+}
+
+export async function fileReportAction(
+  _prev: ReportFormState,
+  formData: FormData,
+): Promise<ReportFormState> {
+  const user = await requireSession();
+  const { serviceId, answers, counts, values } = readReportForm(formData);
 
   try {
     await fileReport({
@@ -77,9 +91,7 @@ export async function fileReportAction(
       answers,
       counts,
     });
-    revalidatePath(`/services/${serviceId}`);
-    revalidatePath("/services");
-    revalidatePath("/stock");
+    revalidateReportViews(serviceId);
     return { ok: "Report filed." };
   } catch (err) {
     if (err instanceof ReportValidationError) {
@@ -90,5 +102,23 @@ export async function fileReportAction(
     }
     console.error("Failed to file report:", err);
     return { error: "Couldn't file the report. Please try again.", values };
+  }
+}
+
+export async function editReportAction(
+  _prev: ReportFormState,
+  formData: FormData,
+): Promise<ReportFormState> {
+  await requireSession();
+  const { serviceId, answers, counts, values } = readReportForm(formData);
+
+  try {
+    await editReport({ serviceId, answers, counts });
+    revalidateReportViews(serviceId);
+    return { ok: "Report updated." };
+  } catch (err) {
+    if (err instanceof ReportValidationError) return { error: err.message, values };
+    console.error("Failed to edit report:", err);
+    return { error: "Couldn't save the report. Please try again.", values };
   }
 }

@@ -24,6 +24,7 @@ const STATUS_META: Record<StockStatus, { status: Status; label: string }> = {
 export type StockCardProps = {
   supplyId: string;
   name: string;
+  unit: string | null;
   currentCount: number | null;
   minimumLevel: number | null;
   status: StockStatus | null;
@@ -38,6 +39,7 @@ export type StockCardProps = {
 export function StockCard({
   supplyId,
   name,
+  unit,
   currentCount,
   minimumLevel,
   status,
@@ -69,7 +71,7 @@ export function StockCard({
               <p className="mt-3 font-mono tabular-nums text-2xl leading-none">
                 {currentCount}
                 <span className="ml-1 text-sm font-sans text-muted-foreground">
-                  on hand
+                  {unit ? `${unit} on hand` : "on hand"}
                 </span>
                 {minimumLevel != null && (
                   <span className="ml-2 text-xs font-sans text-muted-foreground">
@@ -94,6 +96,7 @@ export function StockCard({
       >
         <CountSheetForm
           supplyId={supplyId}
+          unit={unit}
           currentCount={currentCount}
           onSaved={closeSheet}
         />
@@ -109,10 +112,12 @@ export function StockCard({
  */
 function CountSheetForm({
   supplyId,
+  unit,
   currentCount,
   onSaved,
 }: {
   supplyId: string;
+  unit: string | null;
   currentCount: number | null;
   onSaved: () => void;
 }) {
@@ -140,9 +145,11 @@ function CountSheetForm({
         required
         mono
         autoFocus
+        suffix={unit ?? undefined}
+        placeholder="0.0"
         defaultValue={currentCount ?? ""}
         error={state?.error}
-        help="How much is on hand right now — the latest count wins."
+        help="How much is on hand right now — decimals OK (e.g. 1.5). The latest count wins."
       />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : "Save count"}

@@ -1,12 +1,18 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { reports, services, stockCounts, supplies } from "@/db/schema";
-import { dispatchRestockAlert, getCurrentCounts } from "@/modules/inventory/stock";
+import {
+  alertOnCorrectedCounts,
+  dispatchRestockAlert,
+  getCurrentCounts,
+  type CountCorrection,
+} from "@/modules/inventory/stock";
 import { decideRestockAlert } from "@/modules/inventory/restock-rules";
 import type { Supply } from "@/modules/inventory/supply";
 import {
   isUniqueViolation,
   planReport,
+  planReportEdit,
   ReportValidationError,
   type ReportAnswers,
 } from "./report-rules";
@@ -21,10 +27,16 @@ export type Report = {
   filedByUserId: string | null;
   answers: ReportAnswers;
   createdAt: Date;
+  editedAt: Date | null;
 };
 
-/** The counts captured by a Report, with Supply names for display. */
-export type ReportCount = { supplyId: string; supplyName: string; count: number };
+/** The counts captured by a Report, with Supply names and units for display. */
+export type ReportCount = {
+  supplyId: string;
+  supplyName: string;
+  unit: string | null;
+  count: number;
+};
 
 /** A Report plus the counts it recorded — the per-Service report view. */
 export type ReportDetail = { report: Report; counts: ReportCount[] };
@@ -133,6 +145,61 @@ export async function fileReport(input: {
   return report;
 }
 
+/**
+ * Re-submits an edited Report: re-validates the answers and the counts it
+ * originally recorded, then overwrites the answers and corrects each changed
+ * Stock Count in place (`countedAt` kept — see ADR-0001's amendment). Any team
+ * member may edit. The writes go in one atomic batch; Restock Alerts follow
+ * once it commits, as with `fileReport`.
+ */
+export async function editReport(input: {
+  serviceId: string;
+  answers: Record<string, unknown>;
+  counts: Record<string, unknown>;
+}): Promise<Report> {
+  const existing = await getReportForService(input.serviceId);
+  if (!existing) {
+    throw new ReportValidationError("This service doesn't have a report to edit.");
+  }
+
+  const recorded = await db.query.stockCounts.findMany({
+    where: eq(stockCounts.reportId, existing.id),
+    columns: { id: true, supplyId: true, count: true },
+  });
+  const plan = planReportEdit({
+    recordedSupplyIds: recorded.map((c) => c.supplyId),
+    answers: input.answers,
+    counts: input.counts,
+  });
+
+  const recordedBySupply = new Map(recorded.map((c) => [c.supplyId, c]));
+  const corrections: CountCorrection[] = plan.counts.flatMap((c) => {
+    const row = recordedBySupply.get(c.supplyId)!;
+    return row.count === c.count
+      ? []
+      : [{ countId: row.id, supplyId: c.supplyId, previousCount: row.count, newCount: c.count }];
+  });
+
+  const [[report]] = await db.batch([
+    db
+      .update(reports)
+      .set({ answers: plan.answers, editedAt: new Date() })
+      .where(eq(reports.id, existing.id))
+      .returning(),
+    ...corrections.map((c) =>
+      db.update(stockCounts).set({ count: c.newCount }).where(eq(stockCounts.id, c.countId)),
+    ),
+  ]);
+
+  // The edit has committed; a failed alert lookup must not report it as failed.
+  try {
+    await alertOnCorrectedCounts(corrections);
+  } catch (err) {
+    console.error("Failed to check restock alerts for an edited report:", err);
+  }
+  return report;
+}
+
 /** The filed Report for a Service plus the counts it captured, or null. */
 export async function getReportDetail(serviceId: string): Promise<ReportDetail | null> {
   const report = await getReportForService(serviceId);
@@ -145,18 +212,19 @@ export async function getReportDetail(serviceId: string): Promise<ReportDetail |
   if (countRows.length === 0) return { report, counts: [] };
 
   const supplyRows = await db.query.supplies.findMany({
-    columns: { id: true, name: true },
+    columns: { id: true, name: true, unit: true },
     where: inArray(
       supplies.id,
       countRows.map((c) => c.supplyId),
     ),
   });
-  const nameById = new Map(supplyRows.map((s) => [s.id, s.name]));
+  const supplyById = new Map(supplyRows.map((s) => [s.id, s]));
 
   const counts: ReportCount[] = countRows
     .map((c) => ({
       supplyId: c.supplyId,
-      supplyName: nameById.get(c.supplyId) ?? "(removed supply)",
+      supplyName: supplyById.get(c.supplyId)?.name ?? "(removed supply)",
+      unit: supplyById.get(c.supplyId)?.unit ?? null,
       count: c.count,
     }))
     .sort((a, b) => a.supplyName.localeCompare(b.supplyName));

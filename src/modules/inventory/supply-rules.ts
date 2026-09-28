@@ -7,6 +7,7 @@ import { assertLead, type Role } from "@/modules/auth/roles";
 export type Supply = {
   id: string;
   name: string;
+  unit: string | null;
   designated: boolean;
   minimumLevel: number | null;
   retiredAt: Date | null;
@@ -15,6 +16,7 @@ export type Supply = {
 
 export type SupplyInput = {
   name: string;
+  unit?: string | null;
   designated?: boolean;
   minimumLevel?: number | null;
 };
@@ -22,11 +24,13 @@ export type SupplyInput = {
 /** The validated, normalized fields ready to persist. */
 export type ValidatedSupply = {
   name: string;
+  unit: string | null;
   designated: boolean;
   minimumLevel: number | null;
 };
 
 const MAX_NAME_LENGTH = 100;
+const MAX_UNIT_LENGTH = 30;
 
 /** A caller-facing problem with Supply input (bad name, negative minimum, …). */
 export class SupplyValidationError extends Error {
@@ -37,9 +41,9 @@ export class SupplyValidationError extends Error {
 }
 
 /**
- * Normalizes and validates Supply input. A name is required; the minimum level,
- * when given, must be a number of zero or more (decimals allowed); designation
- * defaults off.
+ * Normalizes and validates Supply input. A name is required; the unit is
+ * optional free text (blank means none); the minimum level, when given, must be
+ * a number of zero or more (decimals allowed); designation defaults off.
  */
 export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
   const name = input.name?.trim() ?? "";
@@ -49,6 +53,13 @@ export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
   if (name.length > MAX_NAME_LENGTH) {
     throw new SupplyValidationError(
       `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
+    );
+  }
+
+  const unit = input.unit?.trim() || null;
+  if (unit && unit.length > MAX_UNIT_LENGTH) {
+    throw new SupplyValidationError(
+      `Unit must be ${MAX_UNIT_LENGTH} characters or fewer.`,
     );
   }
 
@@ -62,7 +73,7 @@ export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
     minimumLevel = input.minimumLevel;
   }
 
-  return { name, designated: input.designated ?? false, minimumLevel };
+  return { name, unit, designated: input.designated ?? false, minimumLevel };
 }
 
 /** Only a Lead may manage the Supply catalog. Throws for anyone else. */

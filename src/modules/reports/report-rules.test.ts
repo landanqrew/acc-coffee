@@ -3,6 +3,7 @@ import {
   answerText,
   isUniqueViolation,
   planReport,
+  planReportEdit,
   REPORT_QUESTIONS,
   ReportValidationError,
   validateAnswers,
@@ -120,6 +121,45 @@ describe("planReport", () => {
 
   it("rejects the whole submission when a designated supply is uncounted", () => {
     expect(() => planReport({ ...base, counts: {} })).toThrow(ReportValidationError);
+  });
+});
+
+describe("planReportEdit", () => {
+  const base = {
+    recordedSupplyIds: ["a", "b"],
+    answers: { mediumPots: "3", darkPots: "1", leftoverPots: "0", issues: "grinder jammed" },
+    counts: { a: "2.5", b: "0" },
+  };
+
+  it("returns the corrected answers and a count for each recorded supply", () => {
+    expect(planReportEdit(base)).toEqual({
+      answers: { mediumPots: 3, darkPots: 1, leftoverPots: 0, issues: "grinder jammed" },
+      counts: [
+        { supplyId: "a", count: 2.5 },
+        { supplyId: "b", count: 0 },
+      ],
+    });
+  });
+
+  it("ignores counts for supplies the report never recorded", () => {
+    const plan = planReportEdit({ ...base, counts: { ...base.counts, c: "9" } });
+    expect(plan.counts.map((c) => c.supplyId)).toEqual(["a", "b"]);
+  });
+
+  it("rejects a blanked-out recorded count", () => {
+    expect(() => planReportEdit({ ...base, counts: { a: "", b: "1" } })).toThrow(
+      ReportValidationError,
+    );
+  });
+
+  it("rejects invalid corrected answers", () => {
+    expect(() =>
+      planReportEdit({ ...base, answers: { ...base.answers, leftoverPots: "1.5" } }),
+    ).toThrow(ReportValidationError);
+  });
+
+  it("allows editing a report that recorded no counts", () => {
+    expect(planReportEdit({ ...base, recordedSupplyIds: [], counts: {} }).counts).toEqual([]);
   });
 });
 

@@ -9,15 +9,15 @@ A single gathering where coffee is served — each Sunday gathering is its own S
 _Avoid_: event, gathering, brew-day
 
 **Service Report**:
-The coffee team's log filed after each Service — answers to a set of operational questions (what was brewed, leftovers, issues) plus a Stock Count for each designated Supply.
+The coffee team's log filed after each Service — answers to a set of operational questions (what was brewed, leftovers, issues) plus a Stock Count for each designated Supply. Any team member can edit and re-submit a filed Report to correct it.
 _Avoid_: post-service survey, team survey, debrief
 
 **Supply**:
-A consumable tracked in inventory (beans, cups, creamer, filters). Designated Supplies are the ones counted on every Service Report.
+A consumable tracked in inventory (beans, cups, creamer, filters), with an optional unit of measure (bags, lbs, sleeves). Designated Supplies are the ones counted on every Service Report.
 _Avoid_: product, item
 
 **Stock Count**:
-An observation of how much of a Supply is on hand, recorded either in a Service Report or as an ad-hoc update. The latest count for a Supply is its current stock level.
+An observation of how much of a Supply is on hand (decimals allowed), recorded either in a Service Report or as an ad-hoc update. The latest count for a Supply is its current stock level. A count is only ever corrected by editing its Service Report (see ADR-0001).
 _Avoid_: decrement, ledger entry
 
 **Restock Alert**:

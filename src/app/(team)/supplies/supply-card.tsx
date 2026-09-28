@@ -47,6 +47,9 @@ export function SupplyCard({ supply, lead }: { supply: Supply; lead: boolean }) 
   const body = (
     <Card className={lead ? "transition-shadow hover:shadow-lift" : undefined}>
       <span className="font-semibold">{supply.name}</span>
+      {supply.unit && (
+        <p className="text-xs text-muted-foreground">Measured in {supply.unit}</p>
+      )}
       <SupplyFacts supply={supply} />
     </Card>
   );

@@ -104,6 +104,50 @@ export async function getCurrentCounts(
   return current;
 }
 
+/** A Service Report's Stock Count corrected in place (see ADR-0001's amendment). */
+export type CountCorrection = {
+  countId: string;
+  supplyId: string;
+  previousCount: number;
+  newCount: number;
+};
+
+/**
+ * Sends Restock Alerts for Report count corrections once they have committed.
+ * A correction alerts only when its row is still the Supply's current level
+ * (a later count wins) and it newly crosses below an active Supply's minimum.
+ */
+export async function alertOnCorrectedCounts(
+  corrections: readonly CountCorrection[],
+): Promise<void> {
+  if (corrections.length === 0) return;
+  const supplyIds = corrections.map((c) => c.supplyId);
+  const [counts, supplyRows] = await Promise.all([
+    db.query.stockCounts.findMany({
+      columns: { id: true, supplyId: true, count: true, countedAt: true },
+      where: inArray(stockCounts.supplyId, supplyIds),
+    }),
+    db.query.supplies.findMany({
+      columns: { id: true, name: true, minimumLevel: true },
+      where: and(inArray(supplies.id, supplyIds), isNull(supplies.retiredAt)),
+    }),
+  ]);
+  const supplyById = new Map(supplyRows.map((s) => [s.id, s]));
+
+  const alerts = corrections.flatMap((c) => {
+    const supply = supplyById.get(c.supplyId);
+    const latest = latestCount(counts.filter((x) => x.supplyId === c.supplyId));
+    if (!supply || latest?.id !== c.countId) return [];
+    const alert = decideRestockAlert({
+      supply,
+      previousCount: c.previousCount,
+      newCount: c.newCount,
+    });
+    return alert ? [alert] : [];
+  });
+  await Promise.all(alerts.map(dispatchRestockAlert));
+}
+
 /**
  * The current stock picture for every active Supply — last-count-wins level,
  * low-stock flag, and when each was last counted.

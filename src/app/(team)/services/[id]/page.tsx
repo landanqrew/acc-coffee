@@ -8,13 +8,12 @@ import { getService } from "@/modules/services/service";
 import { getBrewEditContext, getBrewQuantities } from "@/modules/services/brew";
 import { FEEDBACK_RATINGS, getFeedbackSummary } from "@/modules/feedback/feedback";
 import {
-  answerText,
   getReportDetail,
   listDesignatedSupplies,
   REPORT_QUESTIONS,
 } from "@/modules/reports/report";
 import { BrewForm } from "./brew-form";
-import { ReportForm } from "./report-form";
+import { ReportForm, type ReportCountRow } from "./report-form";
 
 function formatDate(date: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -22,6 +21,12 @@ function formatDate(date: string): string {
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00Z`));
 }
+
+const filedAtFormat = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "America/Chicago",
+});
 
 function formatTime(time: string): string {
   const [h, m] = time.split(":").map(Number);
@@ -68,6 +73,15 @@ export default async function ServiceReportPage({
   // Only the filing form needs the designated Supplies; skip the query on the
   // happy read path where a Report already exists.
   const designated = detail ? [] : await listDesignatedSupplies();
+  // Filed: the counts the Report recorded; unfiled: every designated Supply.
+  const countRows: ReportCountRow[] = detail
+    ? detail.counts.map((c) => ({
+        supplyId: c.supplyId,
+        name: c.supplyName,
+        unit: c.unit,
+        count: c.count,
+      }))
+    : designated.map((s) => ({ supplyId: s.id, name: s.name, unit: s.unit }));
 
   return (
     <section className="mx-auto max-w-2xl space-y-8">
@@ -107,55 +121,24 @@ export default async function ServiceReportPage({
         )}
       </div>
 
-      {detail ? (
-        <div className="space-y-6">
+      <div className="space-y-4">
+        {detail && (
           <p className="rounded-2xl border border-ok-bd bg-ok-bg px-4 py-3 text-sm text-ok">
-            Report filed{" "}
-            {new Intl.DateTimeFormat("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-              timeZone: "America/Chicago",
-            }).format(detail.report.createdAt)}
+            Report filed {filedAtFormat.format(detail.report.createdAt)}
+            {detail.report.editedAt &&
+              ` · edited ${filedAtFormat.format(detail.report.editedAt)}`}
             .
           </p>
-
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium">How it went</h2>
-            <Card>
-              <dl className="space-y-3">
-                {REPORT_QUESTIONS.map((q) => (
-                  <ReadRow
-                    key={q.id}
-                    label={q.label}
-                    value={answerText(detail.report.answers[q.id])}
-                  />
-                ))}
-              </dl>
-            </Card>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium">Counts recorded</h2>
-            {detail.counts.length > 0 ? (
-              <Card>
-                <dl className="space-y-3">
-                  {detail.counts.map((c) => (
-                    <ReadRow key={c.supplyId} label={c.supplyName} value={c.count} />
-                  ))}
-                </dl>
-              </Card>
-            ) : (
-              <p className="text-sm text-subtle">No counts were recorded.</p>
-            )}
-          </div>
-        </div>
-      ) : (
+        )}
         <ReportForm
+          // Remount once filed so the fresh Report opens locked.
+          key={detail ? "filed" : "unfiled"}
           serviceId={service.id}
           questions={REPORT_QUESTIONS}
-          designated={designated}
+          countRows={countRows}
+          answers={detail?.report.answers}
         />
-      )}
+      </div>
 
       <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-3">
