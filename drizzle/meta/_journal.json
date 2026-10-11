@@ -92,6 +92,13 @@
       "when": 1790520389732,
       "tag": "0012_supply_unit_and_report_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791742314766,
+      "tag": "0013_revert_quarter_step_drift",
+      "breakpoints": true
     }
   ]
 }
