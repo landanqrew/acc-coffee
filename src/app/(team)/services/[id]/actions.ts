@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLead, requireSession } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import {
   editReport,
   fileReport,
@@ -35,7 +36,7 @@ export async function setBrewQuantitiesAction(
   } catch (err) {
     if (err instanceof BrewValidationError) return { error: err.message };
     console.error("Failed to set brew quantities:", err);
-    return { error: "Couldn't save the quantities. Please try again." };
+    return { error: failureMessage(err, "Couldn't save the quantities") };
   }
 }
 
@@ -101,7 +102,7 @@ export async function fileReportAction(
       return { error: err.message, values };
     }
     console.error("Failed to file report:", err);
-    return { error: "Couldn't file the report. Please try again.", values };
+    return { error: failureMessage(err, "Couldn't file the report"), values };
   }
 }
 
@@ -119,6 +120,6 @@ export async function editReportAction(
   } catch (err) {
     if (err instanceof ReportValidationError) return { error: err.message, values };
     console.error("Failed to edit report:", err);
-    return { error: "Couldn't save the report. Please try again.", values };
+    return { error: failureMessage(err, "Couldn't save the report"), values };
   }
 }

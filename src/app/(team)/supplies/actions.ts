@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLead } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import {
   createSupply,
   retireSupply,
@@ -33,7 +34,7 @@ export async function createSupplyAction(
   } catch (err) {
     if (err instanceof SupplyValidationError) return { error: err.message };
     console.error("Failed to create supply:", err);
-    return { error: "Couldn't save the supply. Please try again." };
+    return { error: failureMessage(err, "Couldn't save the supply") };
   }
 }
 
@@ -50,7 +51,7 @@ export async function updateSupplyAction(
   } catch (err) {
     if (err instanceof SupplyValidationError) return { error: err.message };
     console.error("Failed to update supply:", err);
-    return { error: "Couldn't save the supply. Please try again." };
+    return { error: failureMessage(err, "Couldn't save the supply") };
   }
 }
 

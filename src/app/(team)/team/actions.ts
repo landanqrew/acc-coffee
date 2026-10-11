@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { appBaseUrl } from "@/lib/app-url";
 import { requireLead } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import { createInvite, InviteError } from "@/modules/auth/invites";
 import { isRole } from "@/modules/auth/roles";
 
@@ -39,7 +40,7 @@ export async function inviteAction(
       return { error: err.message };
     }
     console.error("Failed to create invite:", err);
-    return { error: "Couldn't send the invite email. Please try again." };
+    return { error: failureMessage(err, "Couldn't create the invite") };
   }
 
   revalidatePath("/team");

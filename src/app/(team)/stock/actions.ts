@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import { recordStockCount, StockCountValidationError } from "@/modules/inventory/stock";
 
 export type CountState = { error?: string; ok?: string } | undefined;
@@ -28,6 +29,6 @@ export async function recordCountAction(
   } catch (err) {
     if (err instanceof StockCountValidationError) return { error: err.message };
     console.error("Failed to record stock count:", err);
-    return { error: "Couldn't record the count. Please try again." };
+    return { error: failureMessage(err, "Couldn't record the count") };
   }
 }
