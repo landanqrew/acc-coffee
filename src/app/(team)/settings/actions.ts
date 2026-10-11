@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLead } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import {
   setChurchAdminEmail,
   SettingsValidationError,
@@ -24,6 +25,6 @@ export async function setChurchAdminAction(
   } catch (err) {
     if (err instanceof SettingsValidationError) return { error: err.message };
     console.error("Failed to set church admin email:", err);
-    return { error: "Couldn't save the address. Please try again." };
+    return { error: failureMessage(err, "Couldn't save the address") };
   }
 }

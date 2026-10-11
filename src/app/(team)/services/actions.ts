@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLead } from "@/lib/dal";
+import { failureMessage } from "@/lib/db-errors";
 import {
   addScheduleEntry,
   createAdHocService,
@@ -31,7 +32,7 @@ export async function addScheduleAction(
   } catch (err) {
     if (err instanceof ServiceValidationError) return { error: err.message };
     console.error("Failed to add schedule entry:", err);
-    return { error: "Couldn't save the gathering. Please try again." };
+    return { error: failureMessage(err, "Couldn't save the gathering") };
   }
 }
 
@@ -47,7 +48,7 @@ export async function removeScheduleAction(
   } catch (err) {
     if (err instanceof ServiceValidationError) return { error: err.message };
     console.error("Failed to remove schedule entry:", err);
-    return { error: "Couldn't remove the gathering. Please try again." };
+    return { error: failureMessage(err, "Couldn't remove the gathering") };
   }
 }
 
@@ -67,6 +68,6 @@ export async function createAdHocAction(
   } catch (err) {
     if (err instanceof ServiceValidationError) return { error: err.message };
     console.error("Failed to create ad-hoc service:", err);
-    return { error: "Couldn't create the service. Please try again." };
+    return { error: failureMessage(err, "Couldn't create the service") };
   }
 }
