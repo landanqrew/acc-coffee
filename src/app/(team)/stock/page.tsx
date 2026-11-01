@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/dal";
+import { isLead } from "@/modules/auth/roles";
 import { getStockLevels, stockStatus } from "@/modules/inventory/stock";
 import { StockCard } from "./stock-card";
 
@@ -8,7 +9,8 @@ const dateFormat = new Intl.DateTimeFormat("en-US", {
 });
 
 export default async function StockPage() {
-  await requireSession();
+  const user = await requireSession();
+  const canEditMinimum = isLead(user.role);
   const levels = await getStockLevels();
 
   return (
@@ -35,6 +37,7 @@ export default async function StockPage() {
                 unit={level.supply.unit}
                 currentCount={level.currentCount}
                 minimumLevel={level.supply.minimumLevel}
+                canEditMinimum={canEditMinimum}
                 status={stockStatus(level)}
                 lastCountedLabel={
                   level.lastCountedAt

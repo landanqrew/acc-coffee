@@ -12,7 +12,12 @@ import {
   type Status,
 } from "@/components/ui";
 import type { StockStatus } from "@/modules/inventory/stock";
-import { recordCountAction, type CountState } from "./actions";
+import {
+  recordCountAction,
+  setMinimumLevelAction,
+  type CountState,
+  type MinimumState,
+} from "./actions";
 
 /** Maps a domain stock status to its pill colour + human label. */
 const STATUS_META: Record<StockStatus, { status: Status; label: string }> = {
@@ -27,6 +32,8 @@ export type StockCardProps = {
   unit: string | null;
   currentCount: number | null;
   minimumLevel: number | null;
+  /** Leads may also set the minimum level (Restock Alert threshold) here. */
+  canEditMinimum: boolean;
   status: StockStatus | null;
   lastCountedLabel: string;
 };
@@ -42,6 +49,7 @@ export function StockCard({
   unit,
   currentCount,
   minimumLevel,
+  canEditMinimum,
   status,
   lastCountedLabel,
 }: StockCardProps) {
@@ -100,6 +108,14 @@ export function StockCard({
           currentCount={currentCount}
           onSaved={closeSheet}
         />
+        {canEditMinimum && (
+          <MinimumSheetForm
+            supplyId={supplyId}
+            unit={unit}
+            minimumLevel={minimumLevel}
+            onSaved={closeSheet}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -153,6 +169,55 @@ function CountSheetForm({
       />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : "Save count"}
+      </Button>
+    </form>
+  );
+}
+
+/**
+ * Lead-only section of the Stock-Count sheet for the Supply's minimum level.
+ * A separate form from the count so recording a count never touches the
+ * threshold. Blank clears the minimum.
+ */
+function MinimumSheetForm({
+  supplyId,
+  unit,
+  minimumLevel,
+  onSaved,
+}: {
+  supplyId: string;
+  unit: string | null;
+  minimumLevel: number | null;
+  onSaved: () => void;
+}) {
+  const [state, action, pending] = useActionState<MinimumState, FormData>(
+    setMinimumLevelAction,
+    undefined,
+  );
+
+  useEffect(() => {
+    if (state?.ok) onSaved();
+  }, [state, onSaved]);
+
+  return (
+    <form action={action} className="mt-6 space-y-4 border-t border-border pt-4">
+      <input type="hidden" name="supplyId" value={supplyId} />
+      <Field
+        label="Minimum level"
+        name="minimumLevel"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        mono
+        suffix={unit ?? undefined}
+        placeholder="none"
+        defaultValue={minimumLevel ?? ""}
+        error={state?.error}
+        help="A Restock Alert fires when stock drops below this. Leave blank for no minimum."
+      />
+      <Button type="submit" variant="secondary" disabled={pending} className="w-full">
+        {pending ? "Saving…" : "Save minimum"}
       </Button>
     </form>
   );
