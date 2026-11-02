@@ -64,7 +64,11 @@ export function StockCard({
       <SheetTrigger asChild>
         <button
           type="button"
-          aria-label={`Record a stock count for ${name}`}
+          aria-label={
+            canEditMinimum
+              ? `Record a stock count or set the minimum for ${name}`
+              : `Record a stock count for ${name}`
+          }
           className="block w-full rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Card className="transition-shadow hover:shadow-lift">
@@ -99,7 +103,7 @@ export function StockCard({
       </SheetTrigger>
 
       <SheetContent
-        title={`Count · ${name}`}
+        title={`${canEditMinimum ? "Count & minimum" : "Count"} · ${name}`}
         className="md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-sm md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
       >
         <CountSheetForm
@@ -113,7 +117,6 @@ export function StockCard({
             supplyId={supplyId}
             unit={unit}
             minimumLevel={minimumLevel}
-            onSaved={closeSheet}
           />
         )}
       </SheetContent>
@@ -177,27 +180,22 @@ function CountSheetForm({
 /**
  * Lead-only section of the Stock-Count sheet for the Supply's minimum level.
  * A separate form from the count so recording a count never touches the
- * threshold. Blank clears the minimum.
+ * threshold. Blank clears the minimum. Saving keeps the sheet open (confirming
+ * inline) so an unsaved count typed above isn't discarded.
  */
 function MinimumSheetForm({
   supplyId,
   unit,
   minimumLevel,
-  onSaved,
 }: {
   supplyId: string;
   unit: string | null;
   minimumLevel: number | null;
-  onSaved: () => void;
 }) {
   const [state, action, pending] = useActionState<MinimumState, FormData>(
     setMinimumLevelAction,
     undefined,
   );
-
-  useEffect(() => {
-    if (state?.ok) onSaved();
-  }, [state, onSaved]);
 
   return (
     <form action={action} className="mt-6 space-y-4 border-t border-border pt-4">
@@ -214,11 +212,16 @@ function MinimumSheetForm({
         placeholder="none"
         defaultValue={minimumLevel ?? ""}
         error={state?.error}
-        help="A Restock Alert fires when stock drops below this. Leave blank for no minimum."
+        help="A Restock Alert goes out on the next count that drops below this. Leave blank for no minimum."
       />
       <Button type="submit" variant="secondary" disabled={pending} className="w-full">
         {pending ? "Saving…" : "Save minimum"}
       </Button>
+      {state?.ok && (
+        <p className="text-sm text-ok" role="status">
+          {state.ok}
+        </p>
+      )}
     </form>
   );
 }
