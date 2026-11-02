@@ -63,17 +63,26 @@ export function validateSupplyInput(input: SupplyInput): ValidatedSupply {
     );
   }
 
-  let minimumLevel: number | null = null;
-  if (input.minimumLevel != null) {
-    if (!Number.isFinite(input.minimumLevel) || input.minimumLevel < 0) {
-      throw new SupplyValidationError(
-        "Minimum level must be zero or more.",
-      );
-    }
-    minimumLevel = input.minimumLevel;
-  }
+  return {
+    name,
+    unit,
+    designated: input.designated ?? false,
+    minimumLevel: validateMinimumLevel(input.minimumLevel),
+  };
+}
 
-  return { name, unit, designated: input.designated ?? false, minimumLevel };
+/**
+ * Validates a Restock Alert threshold: null/omitted means no minimum; otherwise
+ * a number of zero or more (decimals allowed).
+ */
+export function validateMinimumLevel(
+  minimumLevel: number | null | undefined,
+): number | null {
+  if (minimumLevel == null) return null;
+  if (!Number.isFinite(minimumLevel) || minimumLevel < 0) {
+    throw new SupplyValidationError("Minimum level must be zero or more.");
+  }
+  return minimumLevel;
 }
 
 /** Only a Lead may manage the Supply catalog. Throws for anyone else. */

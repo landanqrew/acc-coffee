@@ -30,6 +30,7 @@ export async function createSupplyAction(
   try {
     const supply = await createSupply(lead.role, readSupplyForm(formData));
     revalidatePath("/supplies");
+    revalidatePath("/stock");
     return { ok: `Added ${supply.name}.` };
   } catch (err) {
     if (err instanceof SupplyValidationError) return { error: err.message };
@@ -47,6 +48,7 @@ export async function updateSupplyAction(
   try {
     const supply = await updateSupply(lead.role, id, readSupplyForm(formData));
     revalidatePath("/supplies");
+    revalidatePath("/stock");
     return { ok: `Saved ${supply.name}.` };
   } catch (err) {
     if (err instanceof SupplyValidationError) return { error: err.message };
@@ -64,4 +66,5 @@ export async function retireSupplyAction(formData: FormData): Promise<void> {
     console.error("Failed to retire supply:", err);
   }
   revalidatePath("/supplies");
+  revalidatePath("/stock");
 }

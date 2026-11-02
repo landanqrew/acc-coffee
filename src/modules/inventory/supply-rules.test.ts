@@ -5,6 +5,7 @@ import {
   isActive,
   selectActive,
   SupplyValidationError,
+  validateMinimumLevel,
   validateSupplyInput,
 } from "./supply-rules";
 
@@ -71,6 +72,24 @@ describe("validateSupplyInput", () => {
     expect(() => validateSupplyInput({ name: "a".repeat(101) })).toThrow(
       SupplyValidationError,
     );
+  });
+});
+
+describe("validateMinimumLevel", () => {
+  it("treats null or omitted as no minimum", () => {
+    expect(validateMinimumLevel(null)).toBeNull();
+    expect(validateMinimumLevel(undefined)).toBeNull();
+  });
+
+  it("keeps zero and fractional minimums", () => {
+    expect(validateMinimumLevel(0)).toBe(0);
+    expect(validateMinimumLevel(1.5)).toBe(1.5);
+  });
+
+  it("rejects a negative, infinite, or NaN minimum", () => {
+    for (const bad of [-0.5, Infinity, Number("x")]) {
+      expect(() => validateMinimumLevel(bad)).toThrow(SupplyValidationError);
+    }
   });
 });
 
