@@ -12,7 +12,12 @@ import {
   type Status,
 } from "@/components/ui";
 import type { StockStatus } from "@/modules/inventory/stock";
-import { recordCountAction, type CountState } from "./actions";
+import {
+  recordCountAction,
+  setMinimumLevelAction,
+  type CountState,
+  type MinimumState,
+} from "./actions";
 
 /** Maps a domain stock status to its pill colour + human label. */
 const STATUS_META: Record<StockStatus, { status: Status; label: string }> = {
@@ -27,6 +32,8 @@ export type StockCardProps = {
   unit: string | null;
   currentCount: number | null;
   minimumLevel: number | null;
+  /** Leads may also set the minimum level (Restock Alert threshold) here. */
+  canEditMinimum: boolean;
   status: StockStatus | null;
   lastCountedLabel: string;
 };
@@ -42,6 +49,7 @@ export function StockCard({
   unit,
   currentCount,
   minimumLevel,
+  canEditMinimum,
   status,
   lastCountedLabel,
 }: StockCardProps) {
@@ -56,7 +64,11 @@ export function StockCard({
       <SheetTrigger asChild>
         <button
           type="button"
-          aria-label={`Record a stock count for ${name}`}
+          aria-label={
+            canEditMinimum
+              ? `Record a stock count or set the minimum for ${name}`
+              : `Record a stock count for ${name}`
+          }
           className="block w-full rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Card className="transition-shadow hover:shadow-lift">
@@ -91,7 +103,7 @@ export function StockCard({
       </SheetTrigger>
 
       <SheetContent
-        title={`Count · ${name}`}
+        title={`${canEditMinimum ? "Count & minimum" : "Count"} · ${name}`}
         className="md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-sm md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
       >
         <CountSheetForm
@@ -100,6 +112,13 @@ export function StockCard({
           currentCount={currentCount}
           onSaved={closeSheet}
         />
+        {canEditMinimum && (
+          <MinimumSheetForm
+            supplyId={supplyId}
+            unit={unit}
+            minimumLevel={minimumLevel}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -154,6 +173,55 @@ function CountSheetForm({
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Saving…" : "Save count"}
       </Button>
+    </form>
+  );
+}
+
+/**
+ * Lead-only section of the Stock-Count sheet for the Supply's minimum level.
+ * A separate form from the count so recording a count never touches the
+ * threshold. Blank clears the minimum. Saving keeps the sheet open (confirming
+ * inline) so an unsaved count typed above isn't discarded.
+ */
+function MinimumSheetForm({
+  supplyId,
+  unit,
+  minimumLevel,
+}: {
+  supplyId: string;
+  unit: string | null;
+  minimumLevel: number | null;
+}) {
+  const [state, action, pending] = useActionState<MinimumState, FormData>(
+    setMinimumLevelAction,
+    undefined,
+  );
+
+  return (
+    <form action={action} className="mt-6 space-y-4 border-t border-border pt-4">
+      <input type="hidden" name="supplyId" value={supplyId} />
+      <Field
+        label="Minimum level"
+        name="minimumLevel"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        mono
+        suffix={unit ?? undefined}
+        placeholder="none"
+        defaultValue={minimumLevel ?? ""}
+        error={state?.error}
+        help="A Restock Alert goes out on the next count that drops below this. Leave blank for no minimum."
+      />
+      <Button type="submit" variant="secondary" disabled={pending} className="w-full">
+        {pending ? "Saving…" : "Save minimum"}
+      </Button>
+      {state?.ok && (
+        <p className="text-sm text-ok" role="status">
+          {state.ok}
+        </p>
+      )}
     </form>
   );
 }

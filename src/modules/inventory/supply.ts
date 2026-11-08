@@ -5,6 +5,7 @@ import type { Role } from "@/modules/auth/roles";
 import {
   assertCanManageSupplies,
   SupplyValidationError,
+  validateMinimumLevel,
   validateSupplyInput,
   type Supply,
   type SupplyInput,
@@ -36,6 +37,28 @@ export async function updateSupply(
   const [row] = await db
     .update(supplies)
     .set(values)
+    .where(and(eq(supplies.id, id), isNull(supplies.retiredAt)))
+    .returning();
+  if (!row) {
+    throw new SupplyValidationError("That supply no longer exists.");
+  }
+  return row;
+}
+
+/**
+ * Sets just a Supply's minimum level (its Restock Alert threshold), leaving the
+ * rest of the Supply untouched. Null clears it. Lead-only.
+ */
+export async function setMinimumLevel(
+  actorRole: Role | null | undefined,
+  id: string,
+  minimumLevel: number | null,
+): Promise<Supply> {
+  assertCanManageSupplies(actorRole);
+  const value = validateMinimumLevel(minimumLevel);
+  const [row] = await db
+    .update(supplies)
+    .set({ minimumLevel: value })
     .where(and(eq(supplies.id, id), isNull(supplies.retiredAt)))
     .returning();
   if (!row) {
